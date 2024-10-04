@@ -1,0 +1,7 @@
+name: barcode_stacks
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - stacks=2.65
