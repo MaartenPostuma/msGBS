@@ -1,0 +1,7 @@
+name: sort
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - vsearch=2.29.0

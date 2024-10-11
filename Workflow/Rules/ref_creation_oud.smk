@@ -53,12 +53,14 @@ rule combine_joined_all:
         barcodes=expand("{path}/{bar}", path=config["input_dir"], bar=config["barcode_filename"])
     output:
         joined_All=expand("{path}/output_denovo/all.joined.fastq.gz",  path=config["output_dir"])
+    conda: "../Envs/combine_reads.yaml"
     shell:
         """
-        header=$(awk 'NR==1 {print; exit}' barcodes.tsv)
+        header=$(awk 'NR==1 {{print; exit}}' {input.barcodes})
         IFS="	"; headerList=($header)
-        for ((i=1; i<=${#headerList[@]}; i++)); do
-            case "${headerList[$i]}" in
+        set +u
+        for ((i=1; i<=${{#headerList[@]}}; i++)); do
+            case "${{headerList[$i]}}" in
                 Barcode_R1)
                     BR1i="$i"
                     ;;
@@ -79,30 +81,30 @@ rule combine_joined_all:
         WR1Max=0
         WR2Max=0
 
-        {
+        {{
             read
             while read line; do
                 ifs="	"; thisLine=($line)
-                if [ ${thisLine[WR1i]} -gt $WR1Max ]; then
-                    WR1Max=${thisLine[WR1i]}
+                if [ ${{thisLine[WR1i]}} -gt $WR1Max ]; then
+                    WR1Max=${{thisLine[WR1i]}}
                 fi
-                if [ ${thisLine[WR2i]} -gt $WR2Max ]; then
-                    WR2Max=${thisLine[WR2i]}
+                if [ ${{thisLine[WR2i]}} -gt $WR2Max ]; then
+                    WR2Max=${{thisLine[WR2i]}}
                 fi
-                if [ ${#thisLine[BR1i]} -gt $BR1MaxLen ]; then
-                    BR1MaxLen=${#thisLine[BR1i]}
+                if [ ${{#thisLine[BR1i]}} -gt $BR1MaxLen ]; then
+                    BR1MaxLen=${{#thisLine[BR1i]}}
                 fi
-                if [ ${#thisLine[BR2i]} -gt $BR2MaxLen ]; then
-                    BR2MaxLen=${#thisLine[BR2i]}
+                if [ ${{#thisLine[BR2i]}} -gt $BR2MaxLen ]; then
+                    BR2MaxLen=${{#thisLine[BR2i]}}
                 fi
             done
-        } < barcodes.tsv
-
-        maxR1=$(expr $cycles - $BR1MaxLen - $WR1Max)
-        maxR2=$(expr $cycles - $BR2MaxLen - $WR2Max)
-        paste <(seqtk seq {input.unAssembled_1} | cut -c1-$maxR1) <(seqtk seq -r {input.unAssembled_2} |cut -c1-$maxR2|seqtk seq -r -)|cut -f1-5|sed '/^@/!s/\t/NNNNNNNN/g'| sed s/+NNNNNNNN+/+/g| sed 's/ /\t/' | cut -f1,2 |  pigz -p 1 -c > {output.joined_All}"]
+        }} < {input.barcodes}
+        maxR1=$((cycles - BR1MaxLen - WR1Max))
+        maxR2=$((cycles - BR2MaxLen - WR2Max))
+        paste <(seqtk seq {input.unAssembled_1} | cut -c1-$maxR1) <(seqtk seq -r {input.unAssembled_2} |cut -c1-$maxR2|seqtk seq -r -)|cut -f1-5|sed '/^@/!s/\t/NNNNNNNN/g'| sed s/+NNNNNNNN+/+/g| sed 's/ /\t/' | cut -f1,2 |  pigz -p 1 -c > {output.joined_All}
         """
-        
+
+
 rule combine_joined:
     params:
         sample='{sample}',
@@ -113,13 +115,58 @@ rule combine_joined:
         unAssembled_2=expand("{path}/output_denovo/monos/{sample}.joined_2.fastq.gz",path=config["output_dir"],sample=MONOS),
         barcodes=expand("{path}/{bar}", path=config["input_dir"], bar=config["barcode_filename"])
     output:
-        joined_combined=temp(expand("{path}/output_denovo/monos/{{sample}}.joined.fastq.gz",  path=config["output_dir"])),
+        joined_combined=temp(expand("{path}/output_denovo/monos/{{sample}}.joined.fastq.gz",  path=config["output_dir"]))
+    conda: "../Envs/combine_reads.yaml"
     shell:
-        "python src/scripts/join_fastq.py -r1 {params.inputdir}/{params.sample}.joined_1.fastq.gz "
-        "-r2 {params.inputdir}/{params.sample}.joined_2.fastq.gz "
-        "-o {params.inputdir}/{params.sample}.joined.fastq.gz "
-        "--barcodes {input.barcodes} --cycles {params.cycles}"
+        """
+        header=$(awk 'NR==1 {{print; exit}}' {input.barcodes})
+        IFS="	"; headerList=($header)
+        set +u
+        for ((i=1; i<=${{#headerList[@]}}; i++)); do
+            case "${{headerList[$i]}}" in
+                Barcode_R1)
+                    BR1i="$i"
+                    ;;
+                Barcode_R2)
+                    BR2i="$i"
+                    ;;
+                Wobble_R1)
+                    WR1i="$i"
+                    ;;
+                Wobble_R2)
+                    WR2i="$i"
+                    ;;
+            esac
+        done
 
+        BR1MaxLen=0
+        BR2MaxLen=0
+        WR1Max=0
+        WR2Max=0
+
+        {{
+            read
+            while read line; do
+                ifs="	"; thisLine=($line)
+                if [ ${{thisLine[WR1i]}} -gt $WR1Max ]; then
+                    WR1Max=${{thisLine[WR1i]}}
+                fi
+                if [ ${{thisLine[WR2i]}} -gt $WR2Max ]; then
+                    WR2Max=${{thisLine[WR2i]}}
+                fi
+                if [ ${{#thisLine[BR1i]}} -gt $BR1MaxLen ]; then
+                    BR1MaxLen=${{#thisLine[BR1i]}}
+                fi
+                if [ ${{#thisLine[BR2i]}} -gt $BR2MaxLen ]; then
+                    BR2MaxLen=${{#thisLine[BR2i]}}
+                fi
+            done
+        }} < {input.barcodes}
+
+        maxR1=$((cycles - BR1MaxLen - WR1Max))
+        maxR2=$((cycles - BR2MaxLen - WR2Max))
+        paste <(seqtk seq {params.inputdir}/{params.sample}.joined_1.fastq.gz| cut -c1-$maxR1) <(seqtk seq -r {params.inputdir}/{params.sample}.joined_2.fastq.gz|cut -c1-$maxR2|seqtk seq -r -)|cut -f1-5|sed '/^@/!s/\t/NNNNNNNN/g'| sed s/+NNNNNNNN+/+/g| sed 's/ /\t/' | cut -f1,2 |  pigz -p 1 -c > {params.inputdir}/{params.sample}.joined.fastq.gz
+        """
 
 rule cat_monos:
     params:
@@ -141,22 +188,10 @@ rule sort:
         monoFA=expand("{path}/output_denovo/monos/{sample}.combined.fastq.gz",  path=config["output_dir"],sample=MONOS)
     output:
         derep=temp(expand("{path}/output_denovo/monos/{{sample}}.sorted.fa",  path=config["output_dir"]))
+    conda: "../Envs/sort.yaml"
     shell:
          "vsearch -sortbylength {params.inputdir}/{params.sample}.combined.fastq.gz "
          "--output {params.inputdir}/{params.sample}.sorted.fa"
-
-rule derep:
-    params:
-        sample='{sample}',
-        inputdir=expand("{path}/output_denovo/monos",  path=config["output_dir"]),
-        minSize=getParam_mind(param_mind)
-    input:
-        monoFA=expand("{path}/output_denovo/monos/{sample}.sorted.fa",  path=config["output_dir"],sample=MONOS)
-    output:
-        derep=temp(expand("{path}/output_denovo/monos/{{sample}}.derep.fa",  path=config["output_dir"]))
-    shell:
-         "vsearch -derep_fulllength {params.inputdir}/{params.sample}.sorted.fa "
-         "-sizeout -minuniquesize {params.minSize}  -output {params.inputdir}/{params.sample}.derep.fa"
 
 
 rule sort_2:
@@ -167,9 +202,24 @@ rule sort_2:
         derep=expand("{path}/output_denovo/monos/{sample}.derep.fa",  path=config["output_dir"],sample=MONOS)
     output:
         derep=temp(expand("{path}/output_denovo/monos/{{sample}}.ordered.fa",  path=config["output_dir"]))
+    conda: "../Envs/sort.yaml"
     shell:
          "vsearch -sortbylength {params.inputdir}/{params.sample}.derep.fa "
          "--output {params.inputdir}/{params.sample}.ordered.fa"
+
+rule derep:
+    params:
+        sample='{sample}',
+        inputdir=expand("{path}/output_denovo/monos",  path=config["output_dir"]),
+        minSize=getParam_mind(param_mind)
+    input:
+        monoFA=expand("{path}/output_denovo/monos/{sample}.sorted.fa",  path=config["output_dir"],sample=MONOS)
+    output:
+        derep=temp(expand("{path}/output_denovo/monos/{{sample}}.derep.fa",  path=config["output_dir"]))
+    conda: "../Envs/derep.yaml"
+    shell:
+         "vsearch -derep_fulllength {params.inputdir}/{params.sample}.sorted.fa "
+         "-sizeout -minuniquesize {params.minSize}  -output {params.inputdir}/{params.sample}.derep.fa"
 
 rule cluster:
     params:
@@ -181,6 +231,7 @@ rule cluster:
     output:
         derep=temp(expand("{path}/output_denovo/monos/{{sample}}.clustered.fa",  path=config["output_dir"]))
     threads: 1
+    conda: "../Envs/cluster.yaml"
     shell:
          "vsearch -cluster_smallmem {params.inputdir}/{params.sample}.ordered.fa -id 0.95 "
          "-centroids {params.inputdir}/{params.sample}.clustered.fa -sizeout -strand both --threads {threads}"

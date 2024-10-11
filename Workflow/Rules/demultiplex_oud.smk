@@ -50,6 +50,8 @@ rule barcode_stacks:
         oriR1=expand("{input}/{read1}",input=config["input_dir"],read1=config["Read1"]),
         oriR2=expand("{input}/{read2}",input=config["input_dir"],read2=config["Read2"])
     params:
+        read1=read1_sub,
+        read2=read2_sub,
         barcodesfiltered=expand("{output}/{barcodesfiltered}",output=config["output_dir"], barcodesfiltered=config["barcodefiltered_filename"]),
         tmpdir=expand(tmpdirthis),
         outputdir=expand("{output}/Preprocessing", output=config["output_dir"]),
@@ -64,8 +66,8 @@ rule barcode_stacks:
     conda: "../Envs/barcode_stacks.yaml"
     shell:
         """
-        header=$(awk 'NR==1 {{print; exit'}} {input.barcodes})
-        content=$(awk 'NR==2 {{print; exit'}} {input.barcodes})
+        header=$(awk 'NR==1 {{print; exit}}' {input.barcodes})
+        content=$(awk 'NR==2 {{print; exit}}' {input.barcodes})
         IFS="	"; headerList=($header)
 
         for column in "${{!headerList[@]}}";
@@ -86,7 +88,7 @@ rule barcode_stacks:
             esac
         done
         clone_filter -1 {input.oriR1} -2 {input.oriR2} -o {params.clonedir} --inline_inline -igzfastq --oligo_len_1 "$WR1" --oligo_len_2 "$WR2"
-        process_radtags -1 {params.clonedir}/readsF.1.fq.gz -2 {params.clonedir}/readsR.2.fq.gz -b {params.barcodesfiltered} -o {params.tmpdir} -r -D --inline_inline --renz_1 "$ER1" --renz_2 "$ER2" --retain_header --disable_rad_check
+        process_radtags -1 {params.clonedir}/{params.read1}.1.fq.gz -2 {params.clonedir}/{params.read2}.2.fq.gz -b {params.barcodesfiltered} -o {params.tmpdir} -r -D --inline_inline --renz_1 "$ER1" --renz_2 "$ER2" --retain_header --disable_rad_check
     """
 
 rule headers:

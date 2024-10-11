@@ -1,7 +1,8 @@
-name: merge_reads
+name: combine_reads
 channels:
   - bioconda
   - conda-forge
   - defaults
 dependencies:
-  - ngmerge=0.3
+  - seqtk=1.4
+  - pigz=2.8
