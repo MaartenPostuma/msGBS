@@ -1,15 +1,17 @@
-#path to output directory
 output_dir: "../Output"
-#input directory where raw reads are
 input_dir       : "../Input"
-barcodes: "barcodes.tsv"
-#barcode file(barcode file should be kept inside input directory) and enzymes will be included in barcode file
-tmpdir        : "../Misc"
+barcode_filename: "barcodes.tsv"
+barcodefiltered_filename: "barcodes_filtered.tsv"
+tmp_dir        : "../Misc"
+clonefiltered_dir          : "Preprocessing/Clonefiltered"
+preprocessingsup_dir          : "Supplement/Preprocessing" 
+adapterfile                :  "adapters.txt"
+
 #number of sequencing cycles
 cycles        : 150
 #Sequence Reads
-Read1 : "readsF.fq"
-Read2 : "readsR.fq"
+Read1 : "readsF.fq.gz"
+Read2 : "readsR.fq.gz"
 #Minimal cluster depth
 min-depth: 2
 #Location of the blastDB

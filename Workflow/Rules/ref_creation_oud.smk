@@ -2,41 +2,46 @@
 
 rule merge:
     input:
-        R1_in=expand("{path}/output_demultiplex/demulti_R1.fq.gz",  path=config["output_dir"]),
-        R2_in=expand("{path}/output_demultiplex/demulti_R2.fq.gz",  path=config["output_dir"])
+        R1_in=expand("{path}/Preprocessing/demultiplexed_R1.fq.gz",  path=config["output_dir"]),
+        R2_in=expand("{path}/Preprocessing/demultiplexed_R2.fq.gz",  path=config["output_dir"])
     output:
         unAssembled_1=temp(expand("{path}/output_denovo/unassembled_1.fastq.gz",  path=config["output_dir"])),
         unAssembled_2=temp(expand("{path}/output_denovo/unassembled_2.fastq.gz",  path=config["output_dir"])),
         merged_Assembled=expand("{path}/output_denovo/all.merged.fastq.gz",  path=config["output_dir"])
     params:
         unAssembled=expand("{path}/output_denovo/unassembled",  path=config["output_dir"]),
-        merged=expand("{path}/output_denovo/all.merged.fastq.gz",  path=config["output_dir"])
+        merged=expand("{path}/output_denovo/all.merged.fastq.gz",  path=config["output_dir"]),
+        preprosup=expand("{preprosup}", preprosup=config["preprocessingsup_dir"])
+
     threads: 32
+    conda: "../Envs/merge_reads.yaml"
     shell:
         "NGmerge -1 {input.R1_in} -2 {input.R2_in} "
         "-o {params.merged} -n {threads} -f {params.unAssembled} "
-        "-w src/RemoveAdapter_files/qual_profile.txt -q 33 -u 41 -z"
+        "-w {params.preprosup}/qual_profile.txt -q 33 -u 41 -z -g"
 
 
 rule merge_mono:
     params:
         sample='{sample}',
-        inputdir=expand("{path}/output_demultiplex/monos",  path=config["output_dir"]),
-        outputdir=expand("{path}/output_denovo/",  path=config["output_dir"])
+        inputdir=expand("{path}/Preprocessing/monos",  path=config["output_dir"]),
+        outputdir=expand("{path}/output_denovo/",  path=config["output_dir"]),
+        preprosup=expand("{preprosup}", preprosup=config["preprocessingsup_dir"])
     input:
-        R1_in=expand("{path}/output_demultiplex/monos/{sample}.demulti_R1.gz",  path=config["output_dir"],sample=MONOS),
-        R2_in=expand("{path}/output_demultiplex/monos/{sample}.demulti_R2.gz",  path=config["output_dir"],sample=MONOS)
+        R1_in=expand("{path}/Preprocessing/monos/{sample}.demultiplexed_R1.gz",  path=config["output_dir"],sample=MONOS),
+        R2_in=expand("{path}/Preprocessing/monos/{sample}.demultiplexed_R2.gz",  path=config["output_dir"],sample=MONOS)
     output:
         unAssembled_1=temp(expand("{path}/output_denovo/monos/{{sample}}.joined_1.fastq.gz",  path=config["output_dir"])),
         unAssembled_2=temp(expand("{path}/output_denovo/monos/{{sample}}.joined_2.fastq.gz",  path=config["output_dir"])),
         merged_Assembled=temp(expand("{path}/output_denovo/monos/{{sample}}.merged.fastq.gz",  path=config["output_dir"]))
     threads: 1
+    conda: "../Envs/merge_reads.yaml"
     shell:
-        "NGmerge -1 {params.inputdir}/{params.sample}.demulti_R1.gz "
-        "-2 {params.inputdir}/{params.sample}.demulti_R2.gz "
+        "NGmerge -1 {params.inputdir}/{params.sample}.demultiplexed_R1.gz "
+        "-2 {params.inputdir}/{params.sample}.demultiplexed_R2.gz "
         "-o {params.outputdir}/monos/{params.sample}.merged.fastq.gz -n {threads} "
         "-f {params.outputdir}/monos/{params.sample}.joined "
-        "-w src/RemoveAdapter_files/qual_profile.txt -q 33 -u 41 -z"
+        "-w {params.preprosup}/qual_profile.txt -q 33 -u 41 -z -g"
 
 rule combine_joined_all:
     params:
@@ -45,16 +50,59 @@ rule combine_joined_all:
     input:
         unAssembled_1=expand("{path}/output_denovo/unassembled_1.fastq.gz",  path=config["output_dir"]),
         unAssembled_2=expand("{path}/output_denovo/unassembled_2.fastq.gz",  path=config["output_dir"]),
-        barcodes=expand("{path}/{bar}", path=config["input_dir"], bar=config["barcodes"])
+        barcodes=expand("{path}/{bar}", path=config["input_dir"], bar=config["barcode_filename"])
     output:
         joined_All=expand("{path}/output_denovo/all.joined.fastq.gz",  path=config["output_dir"])
     shell:
-        "python src/scripts/join_fastq.py -r1 {input.unAssembled_1} "
-        "-r2 {input.unAssembled_2} "
-        "-o {output.joined_All}  "
-        "--barcodes {input.barcodes} --cycles {params.cycles}"
+        """
+        header=$(awk 'NR==1 {print; exit}' barcodes.tsv)
+        IFS="	"; headerList=($header)
+        for ((i=1; i<=${#headerList[@]}; i++)); do
+            case "${headerList[$i]}" in
+                Barcode_R1)
+                    BR1i="$i"
+                    ;;
+                Barcode_R2)
+                    BR2i="$i"
+                    ;;
+                Wobble_R1)
+                    WR1i="$i"
+                    ;;
+                Wobble_R2)
+                    WR2i="$i"
+                    ;;
+            esac
+        done
 
+        BR1MaxLen=0
+        BR2MaxLen=0
+        WR1Max=0
+        WR2Max=0
 
+        {
+            read
+            while read line; do
+                ifs="	"; thisLine=($line)
+                if [ ${thisLine[WR1i]} -gt $WR1Max ]; then
+                    WR1Max=${thisLine[WR1i]}
+                fi
+                if [ ${thisLine[WR2i]} -gt $WR2Max ]; then
+                    WR2Max=${thisLine[WR2i]}
+                fi
+                if [ ${#thisLine[BR1i]} -gt $BR1MaxLen ]; then
+                    BR1MaxLen=${#thisLine[BR1i]}
+                fi
+                if [ ${#thisLine[BR2i]} -gt $BR2MaxLen ]; then
+                    BR2MaxLen=${#thisLine[BR2i]}
+                fi
+            done
+        } < barcodes.tsv
+
+        maxR1=$(expr $cycles - $BR1MaxLen - $WR1Max)
+        maxR2=$(expr $cycles - $BR2MaxLen - $WR2Max)
+        paste <(seqtk seq {input.unAssembled_1} | cut -c1-$maxR1) <(seqtk seq -r {input.unAssembled_2} |cut -c1-$maxR2|seqtk seq -r -)|cut -f1-5|sed '/^@/!s/\t/NNNNNNNN/g'| sed s/+NNNNNNNN+/+/g| sed 's/ /\t/' | cut -f1,2 |  pigz -p 1 -c > {output.joined_All}"]
+        """
+        
 rule combine_joined:
     params:
         sample='{sample}',
@@ -63,7 +111,7 @@ rule combine_joined:
     input:
         unAssembled_1=expand("{path}/output_denovo/monos/{sample}.joined_1.fastq.gz",path=config["output_dir"],sample=MONOS),
         unAssembled_2=expand("{path}/output_denovo/monos/{sample}.joined_2.fastq.gz",path=config["output_dir"],sample=MONOS),
-        barcodes=expand("{path}/{bar}", path=config["input_dir"], bar=config["barcodes"])
+        barcodes=expand("{path}/{bar}", path=config["input_dir"], bar=config["barcode_filename"])
     output:
         joined_combined=temp(expand("{path}/output_denovo/monos/{{sample}}.joined.fastq.gz",  path=config["output_dir"])),
     shell:
