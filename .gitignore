@@ -1,0 +1,10 @@
+.vscode/
+Input/
+Input/barcodes.tsv
+Output/barcodes_filtered.tsv
+Workflow/.snakemake/
+commands.txt
+archive/
+Misc/
+Output/
+Testing/
