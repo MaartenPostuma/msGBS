@@ -1,0 +1,10 @@
+name: deduplication
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - libdeflate=1.21
+  - isa-l=2.31.0
+  - fastp=0.23.4
+  - stacks=2.65

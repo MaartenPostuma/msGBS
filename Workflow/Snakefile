@@ -31,9 +31,12 @@ def getParam_cycle(param_cycle):
         cycle = param_cycle
     return cycle
 
-include: "Rules/ref_creation_oud.smk"
-include: "Rules/demultiplex_oud.smk"
-include: "Rules/mapping_stats_oud.smk"
+include: "Rules/Preprocessing.smk"
+include: "Rules/Reference_creation.smk"
+include: "Rules/Reference_update.smk"
+include: "Rules/Blasting.smk"
+include: "Rules/Mapping.smk"
+include: "Rules/Analysis.smk"
 
 rule all:
     input:
@@ -46,6 +49,6 @@ rule all:
         bamOut=expand("{path}/mapping/out.bam",path=config["output_dir"]),
         demulti_R1=expand("{path}/Preprocessing/demultiplexed_R1.fq.gz",  path=config["output_dir"]),
         demulti_R2=expand("{path}/Preprocessing/demultiplexed_R2.fq.gz",  path=config["output_dir"]),
-        R1_sample_demulti=expand("{path}/Preprocessing/monos/{sample}.demultiplexed_R1.gz",  path=config["output_dir"],sample=MONOS),
-        R2_sample_demulti=expand("{path}/Preprocessing/monos/{sample}.demultiplexed_R2.gz",  path=config["output_dir"],sample=MONOS)
+        R1_sample_demulti=expand("{path}/Preprocessing/monos/{sample}.demultiplexed_R1.fq.gz",  path=config["output_dir"],sample=MONOS),
+        R2_sample_demulti=expand("{path}/Preprocessing/monos/{sample}.demultiplexed_R2.fq.gz",  path=config["output_dir"],sample=MONOS)
 
