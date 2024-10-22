@@ -16,4 +16,4 @@ Read2: "readsRfull.fq.gz"
 #Minimal cluster depth
 min-depth: 2
 #Location of the blastDB
-blastDB: "/scratch2/maarten/blastDB"
+blastDB: "/scratch2/niels/blastDB"

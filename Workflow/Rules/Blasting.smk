@@ -8,11 +8,13 @@ rule blast:
     threads:40
     shell:
         """
-        export BLASTDB=$BLASTDB:{params.blastDB}
+        export BLASTDB={params.blastDB}
         blastn -query {input.ref} -db {params.blastDB}/nt -out {output.blast_file} \
         -num_alignments 1 -num_threads {threads} \
         -outfmt '6 qseqid sseqid pident evalue bitscore sskingdom sscinames length sstart send'
         """
+
+#         export BLASTDB=$BLASTDB:{params.blastDB}
 
 rule blastref:
     input:

@@ -171,5 +171,4 @@ rule move_monos:
             cp {params.sampleHeaders}."$i".fq.gz {params.outputdir}/{params.sample}.demultiplexed_R"$i".fq.gz
         done
         """
-#mv {params.outputdir}."$i".fq.gz {params.outputdir}/{params.sample}.demultiplexed_R"$i".fq.gz
 
