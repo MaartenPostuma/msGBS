@@ -5,6 +5,7 @@ barcodefiltered_filename: "barcodes_filtered.tsv"
 tmp_dir        : "../Misc"
 clonefiltered_dir          : "Preprocessing/Clonefiltered"
 preprocessingsup_dir          : "Supplement/Preprocessing" 
+genus:          "Supplement/Blasting/Relevant_organisms.csv"
 
 #number of sequencing cycles
 cycles        : 150
