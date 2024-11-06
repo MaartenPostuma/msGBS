@@ -91,12 +91,11 @@ rule blastref:
     
         while IFS='	' read -r contig hit pident e_value bp_hit kingdoms fullname alignment_length start stop; do
          e_value_min=${{e_value#*-}}    
+         add=false
          if [[ $e_value_min != *"."* ]]; then
              if [ $alignment_length -gt 40 ] && [ $e_value_min -gt 20 ]; then
                  add=true
              fi 
-         else 
-             add=false
          fi
         case $kingdoms in
             Bacteria)  
