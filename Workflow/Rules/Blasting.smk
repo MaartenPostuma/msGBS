@@ -14,29 +14,20 @@
 #        -outfmt '6 qseqid sseqid pident evalue bitscore sskingdom sscinames length sstart send'
 #        """
 
+
+
 rule blastref:
     input:
         ref=expand("{path}/output_denovo/ref.fa",path=config["output_dir"]),
         blast_file=expand("{path}/output_blast/outputblast_kingdoms.tsv",path=config["output_dir"]),
         genus_lists=expand("{path}", path=config["genus"])
     output:
-        refBlasted=expand("{path}/output_denovo/Eukaryota_ref.fa",path=config["output_dir"])
+        refBlasted=expand("{path}/output_blast/Eukaryota_ref.fa",path=config["output_dir"])
     params:
         outputDir=expand("{path}/output_blast/", path=config["output_dir"])
-    shell:
+    threads: 10
+    shell:      
         """
-        add_check () {{
-            e_value_min=${{1#*-}}
-            if [[ $e_value_min != *"."* ]]; then
-                if [ $2 -gt 40 ] && [ $e_value_min -gt 20 ]; then
-                    return 1
-                fi 
-            fi
-            return 0
-        }}
-
-        declare -A genus_counts=( ["Bryophyta"]=0 ["Eukaryota"]=0 ["Imperia"]=0 ["Fungi"]=0 ["Gymnospermae"]=0 ["Pteridophyta"]=0 ["Angiospermae"]=0 ["Bacteria"]=0 ["Archaea"]=0  ["N/A"]=0)
-
         Bryophyta=()            #Mosses and worts
         Eukaryota=()            #Eukaryota
         Imperia=()              #Viruses
@@ -97,103 +88,91 @@ rule blastref:
                 Arbuscular+=("${{Am//}}")
             fi
         done < {input.genus_lists}
-
-        
-
-
-
-        
-            
+    
         while IFS='	' read -r contig hit pident e_value bp_hit kingdoms fullname alignment_length start stop; do
+         e_value_min=${{e_value#*-}}    
+         if [[ $e_value_min != *"."* ]]; then
+             if [ $alignment_length -gt 40 ] && [ $e_value_min -gt 20 ]; then
+                 add=true
+             fi 
+         else 
+             add=false
+         fi
         case $kingdoms in
-            Bacteria)
-                add_check $e_value $alignment_length       
-                if [ $? -eq 1 ]; then
+            Bacteria)  
+                if [ "$add" = true ]; then
                     Bacteria_contigs+=("$contig")
                     echo "$fullname" >>  {params.outputDir}Bacteria_names.txt  
-                    ((Bacteria_count+=1))
                 fi
                 ;;
             Archaea)
-                add_check $e_value $alignment_length       
-                if [ $? -eq 1 ]; then
+                if [ "$add" = true ]; then
                     Archaea_contigs+=("$contig")
                     echo "$fullname" >>  {params.outputDir}Archaea_names.txt  
-                    ((Archaea_count+=1))
                 fi
                 ;;    
             Viruses)
-                add_check $e_value $alignment_length       
-                if [ $? -eq 1 ]; then
+                if [ "$add" = true ]; then
                     Imperia_contigs+=("$contig")
                     echo "$fullname" >>  {params.outputDir}Imperia_names.txt  
-                    ((Imperia_count+=1))
                 fi
                 ;;    
             N/A)
-                add_check $e_value $alignment_length       
-                if [ $? -eq 1 ]; then
+                if [ "$add" = true ]; then
                     Eukaryota_contigs+=("$contig")
                     echo "$fullname" >>  {params.outputDir}Eukaryota_names.txt  
-                    ((Eukaryota_count+=1))
                 fi
                 ;;
             Eukaryota)
                 genera=($fullname)
                 main_genera="${{genera[@]:0:1}}"
-                sub_genera="${{genera[@]:0:2}}"
-                add_check $e_value $alignment_length   
-                add=$?
-                if [[ ${{Eukaryota[@]}} =~ $main_genera ]] && [ $add -eq 1 ]; then
+                sub_genera="${{genera[@]:0:2}}" 
+                if [[ ${{Eukaryota[@]}} =~ $main_genera ]] && [ "$add" = true ]; then
                     Eukaryota_contigs+=("$contig")
                     echo "$fullname" >>  {params.outputDir}Eukaryota_names.txt  
-                    (( genus_counts["Eukaryota"]++ ))
                 fi
-                if [[ ${{Arbuscular[@]}} =~ $main_genera ]] && [ $add -eq 1 ]; then
+                if [[ ${{Arbuscular[@]}} =~ $main_genera ]] && [ "$add" = true ]; then
                     Arbuscular_contigs+=("$contig")
+                    Fungi_contigs+=("$contig")
                     echo "$sub_genera" >> {params.outputDir}Arbuscular_names.txt  
-                    (( genus_counts["Fungi"]++ ))
-                    (( genus_counts["Arbuscular"]++ ))
-                elif [[ ${{Fungi[@]}} =~ $main_genera ]] && [ $add -eq 1 ]; then
+                    echo "$sub_genera" >> {params.outputDir}Fungi_names.txt  
+                elif [[ ${{Fungi[@]}} =~ $main_genera ]] && [ "$add" = true ]; then
                     Fungi_contigs+=("$contig")
                     echo "$sub_genera" >> {params.outputDir}Fungi_names.txt  
-                    (( genus_counts["Fungi"]++ ))
-                elif [[ ${{Angiospermae[@]}} =~ $main_genera ]] && [ $add -eq 1 ]; then
+                elif [[ ${{Angiospermae[@]}} =~ $main_genera ]] && [ "$add" = true ]; then
                     Angiospermae_contigs+=("$contig")
                     echo "$fullname" >> {params.outputDir}Angiospermae_names.txt  
-                    (( genus_counts["Angiospermae"]++ ))
-                elif [[ ${{Bryophyta[@]}} =~ $main_genera ]] && [ $add -eq 1 ]; then
+                elif [[ ${{Bryophyta[@]}} =~ $main_genera ]] && [ "$add" = true ]; then
                     Bryophyta_contigs+=("$contig")
                     echo "$fullname" >> {params.outputDir}Bryophyta_names.txt 
-                    (( genus_counts["Bryophyta"]++ ))
-                elif [[ ${{Gymnospermae[@]}} =~ $main_genera ]] && [ $add -eq 1 ]; then
+                elif [[ ${{Gymnospermae[@]}} =~ $main_genera ]] && [ "$add" = true ]; then
                     Gymnospermae_contigs+=("$contig")
                     echo "$fullname" >> {params.outputDir}Gymnospermae_names.txt 
-                    (( genus_counts["Gymnospermae"]++ ))
-                elif [[ ${{Pteridophyta[@]}} =~ $main_genera ]] && [ $add -eq 1 ]; then
+                elif [[ ${{Pteridophyta[@]}} =~ $main_genera ]] && [ "$add" = true ]; then
                     Pteridophyta_contigs+=("$contig")
                     echo "$fullname" >> {params.outputDir}Pteridophyta_names.txt 
-                    (( genus_counts["Pteridophyta"]++ ))
                 fi
                 ;;
             *) 
-                add_check $e_value $alignment_length       
-                if [ $? -eq 1 ]; then
+                if [ "$add" = true ]; then
                     Eukaryota_contigs+=("$contig")
                     echo "$fullname" >>  {params.outputDir}Eukaryota_names.txt  
-                    (( genus_counts["Eukaryota"]++ ))
                 fi
                 ;;
         esac
         done < {input.blast_file}
-    
-        echo "perensap"
 
 
-        for i in "${{!genus_counts[@]}}"
-        do
-            echo "$i" "${{genus_counts[$i]}}"
-        done
+        echo "Bryophyta: " "${{#Bryophyta_contigs[@]}}"  
+        echo "Eukaryota: " "${{#Eukaryota_contigs[@]}}"  
+        echo "Imperia: " "${{#Imperia_contigs[@]}}"  
+        echo "Fungi: " "${{#Fungi_contigs[@]}}"  
+        echo "Arbuscular: " "${{#Arbuscular_contigs[@]}}"  
+        echo "Gymnospermae: " "${{#Gymnospermae_contigs[@]}}"  
+        echo "Pteridophyta: " "${{#Pteridophyta_contigs[@]}}"  
+        echo "Angiospermae: " "${{#Angiospermae_contigs[@]}}"  
+        echo "Archaea: " "${{#Archaea_contigs[@]}}"  
+        echo "Bacteria: " "${{#Bacteria_contigs[@]}}"                           
 
         for line in ${{Bryophyta_contigs[@]}}
         do
@@ -242,7 +221,7 @@ rule blastref:
         switchcase="NONE"
         while read line; do
             if [[ $line == \>* ]]; then
-                line="${{line:1}}"    # eigenlijk rstrip, maar hoeft denk ik niet
+                #line="${{line:1}}"    # deze line moet er uit om bowtie te kunnen runnen
                 if [[ ${{Angiospermae_contigs[@]}} =~ $line ]]; then
                     echo "zalmkoeskoes"
                     echo "$line" >>  {params.outputDir}Angiospermae_ref.fa

@@ -1,0 +1,7 @@
+name: segemehl
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - segemehl=0.3.4

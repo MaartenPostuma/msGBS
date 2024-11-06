@@ -1,3 +1,4 @@
+"""
 rule merge:
     input:
         R1_in=expand("{path}/Preprocessing/demultiplexed_R1.fq.gz",  path=config["output_dir"]),
@@ -17,7 +18,7 @@ rule merge:
         "NGmerge -1 {input.R1_in} -2 {input.R2_in} "
         "-o {params.merged} -n {threads} -f {params.unAssembled} "
         "-w {params.preprosup}/qual_profile.txt -q 33 -u 41 -z -g"
-
+"""
 
 rule merge_mono:
     params:
@@ -41,6 +42,7 @@ rule merge_mono:
         "-f {params.outputdir}/monos/{params.sample}.joined "
         "-w {params.preprosup}/qual_profile.txt -q 33 -u 41 -z -g"
 
+"""
 rule combine_joined_all:
     params:
         inputdir=expand("{path}/output_denovo/",  path=config["output_dir"]),
@@ -53,7 +55,7 @@ rule combine_joined_all:
         joined_All=expand("{path}/output_denovo/all.joined.fastq.gz",  path=config["output_dir"])
     conda: "../Envs/combine_reads.yaml"
     shell:
-        """
+        ""
         header=$(awk 'NR==1 {{print; exit}}' {input.barcodes})
         IFS="	"; headerList=($header)
         set +u
@@ -100,8 +102,8 @@ rule combine_joined_all:
         maxR1=$((cycles - BR1MaxLen - WR1Max))
         maxR2=$((cycles - BR2MaxLen - WR2Max))
         paste <(seqtk seq {input.unAssembled_1} | cut -c1-$maxR1) <(seqtk seq -r {input.unAssembled_2} |cut -c1-$maxR2|seqtk seq -r -)|cut -f1-5|sed '/^@/!s/\t/NNNNNNNN/g'| sed s/+NNNNNNNN+/+/g| sed 's/ /\t/' | cut -f1,2 |  pigz -p 1 -c > {output.joined_All}
-        """
-
+        ""
+"""
 
 rule combine_joined:
     params:

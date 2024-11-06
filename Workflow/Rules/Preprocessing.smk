@@ -86,7 +86,7 @@ rule deduplicate_trim:
                     ;;
             esac
         done
-        fastp --in1 {input.oriR1} --in2 {input.oriR2} --out1 {params.clonedir}/{params.read1}.1.fq.gz --out2 {params.clonedir}/{params.read2}.2.fq.gz --adapter_sequence ATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT --adapter_sequence_r2 CAAGCAGAAGACGGCATACGAGATCGGTCTCGGCATTCCTGCTGAACCGCTCTTCCGATCT --dedup --trim_poly_g --umi --umi_loc per_read --umi_len 3 
+        fastp --in1 {input.oriR1} --in2 {input.oriR2} --out1 {params.clonedir}/{params.read1}.1.fq.gz --out2 {params.clonedir}/{params.read2}.2.fq.gz --adapter_sequence ATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT --adapter_sequence_r2 CAAGCAGAAGACGGCATACGAGATCGGTCTCGGCATTCCTGCTGAACCGCTCTTCCGATCT --dedup --trim_poly_g --umi --umi_loc per_read --umi_len 3 -j ../Output/Preprocessing -h ../Output/Preprocessing
         process_radtags -1 {params.clonedir}/{params.read1}.1.fq.gz -2 {params.clonedir}/{params.read2}.2.fq.gz -b {params.barcodesfiltered} -o {params.tmpdir} -r -D --inline_inline --renz_1 "$ER1" --renz_2 "$ER2" --retain_header --disable_rad_check
         """
 

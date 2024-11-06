@@ -37,7 +37,7 @@ def parse_args():
     if args.input_dir:
         args.reads_R12 = os.path.join(args.input_dir, 'all.joined.fastq.gz')
         args.merged = os.path.join(args.input_dir, 'all.merged.fastq.gz')
-        args.reference = os.path.join(args.input_dir, 'refBlasted.fa')
+        args.reference = os.path.join(args.input_dir, '../output_blast/Eukaryota_ref.fa')
     if args.output_dir:
         if not os.path.exists(args.output_dir):
             os.mkdir(args.output_dir)
@@ -179,6 +179,7 @@ def index_STAR(args):
             header = line
         else:
             seq += line.rstrip('\n')
+            header = ""
     # write final sequence, this is always merged
     merged_len += len(seq)
     merged_count += 1

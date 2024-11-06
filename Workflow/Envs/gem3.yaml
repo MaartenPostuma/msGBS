@@ -1,0 +1,7 @@
+name: gem3
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - gem3-mapper=3.6.1
