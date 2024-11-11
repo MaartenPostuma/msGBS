@@ -222,7 +222,6 @@ rule blastref:
             if [[ $line == \>* ]]; then
                 #line="${{line:1}}"    # deze line moet er uit om bowtie te kunnen runnen
                 if [[ ${{Angiospermae_contigs[@]}} =~ $line ]]; then
-                    echo "zalmkoeskoes"
                     echo "$line" >>  {params.outputDir}Angiospermae_ref.fa
                     Angiospermae_contigs=( "${{Angiospermae_contigs[@]/$line}}" )
                     echo "$line" >>  {params.outputDir}Eukaryota_ref.fa  

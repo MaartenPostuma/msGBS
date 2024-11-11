@@ -1,25 +1,3 @@
-"""
-rule merge:
-    input:
-        R1_in=expand("{path}/Preprocessing/demultiplexed_R1.fq.gz",  path=config["output_dir"]),
-        R2_in=expand("{path}/Preprocessing/demultiplexed_R2.fq.gz",  path=config["output_dir"])
-    output:
-        unAssembled_1=temp(expand("{path}/output_denovo/unassembled_1.fastq.gz",  path=config["output_dir"])),
-        unAssembled_2=temp(expand("{path}/output_denovo/unassembled_2.fastq.gz",  path=config["output_dir"])),
-        merged_Assembled=expand("{path}/output_denovo/all.merged.fastq.gz",  path=config["output_dir"])
-    params:
-        unAssembled=expand("{path}/output_denovo/unassembled",  path=config["output_dir"]),
-        merged=expand("{path}/output_denovo/all.merged.fastq.gz",  path=config["output_dir"]),
-        preprosup=expand("{preprosup}", preprosup=config["preprocessingsup_dir"])
-
-    threads: 32
-    conda: "../Envs/merge_reads.yaml"
-    shell:
-        "NGmerge -1 {input.R1_in} -2 {input.R2_in} "
-        "-o {params.merged} -n {threads} -f {params.unAssembled} "
-        "-w {params.preprosup}/qual_profile.txt -q 33 -u 41 -z -g"
-"""
-
 rule merge_mono:
     params:
         sample='{sample}',
@@ -30,9 +8,9 @@ rule merge_mono:
         R1_in=expand("{path}/Preprocessing/monos/{sample}.demultiplexed_R1.fq.gz",  path=config["output_dir"],sample=MONOS),
         R2_in=expand("{path}/Preprocessing/monos/{sample}.demultiplexed_R2.fq.gz",  path=config["output_dir"],sample=MONOS)
     output:
-        unAssembled_1=temp(expand("{path}/output_denovo/monos/{{sample}}.joined_1.fastq.gz",  path=config["output_dir"])),
-        unAssembled_2=temp(expand("{path}/output_denovo/monos/{{sample}}.joined_2.fastq.gz",  path=config["output_dir"])),
-        merged_Assembled=temp(expand("{path}/output_denovo/monos/{{sample}}.merged.fastq.gz",  path=config["output_dir"]))
+        unAssembled_1=(expand("{path}/output_denovo/monos/{{sample}}.joined_1.fastq.gz",  path=config["output_dir"])),
+        unAssembled_2=(expand("{path}/output_denovo/monos/{{sample}}.joined_2.fastq.gz",  path=config["output_dir"])),
+        merged_Assembled=(expand("{path}/output_denovo/monos/{{sample}}.merged.fastq.gz",  path=config["output_dir"]))
     threads: 1
     conda: "../Envs/merge_reads.yaml"
     shell:
@@ -42,68 +20,6 @@ rule merge_mono:
         "-f {params.outputdir}/monos/{params.sample}.joined "
         "-w {params.preprosup}/qual_profile.txt -q 33 -u 41 -z -g"
 
-"""
-rule combine_joined_all:
-    params:
-        inputdir=expand("{path}/output_denovo/",  path=config["output_dir"]),
-        cycles=getParam_cycle(param_cycle)
-    input:
-        unAssembled_1=expand("{path}/output_denovo/unassembled_1.fastq.gz",  path=config["output_dir"]),
-        unAssembled_2=expand("{path}/output_denovo/unassembled_2.fastq.gz",  path=config["output_dir"]),
-        barcodes=expand("{path}/{bar}", path=config["input_dir"], bar=config["barcode_filename"])
-    output:
-        joined_All=expand("{path}/output_denovo/all.joined.fastq.gz",  path=config["output_dir"])
-    conda: "../Envs/combine_reads.yaml"
-    shell:
-        ""
-        header=$(awk 'NR==1 {{print; exit}}' {input.barcodes})
-        IFS="	"; headerList=($header)
-        set +u
-        for ((i=1; i<=${{#headerList[@]}}; i++)); do
-            case "${{headerList[$i]}}" in
-                Barcode_R1)
-                    BR1i="$i"
-                    ;;
-                Barcode_R2)
-                    BR2i="$i"
-                    ;;
-                Wobble_R1)
-                    WR1i="$i"
-                    ;;
-                Wobble_R2)
-                    WR2i="$i"
-                    ;;
-            esac
-        done
-
-        BR1MaxLen=0
-        BR2MaxLen=0
-        WR1Max=0
-        WR2Max=0
-
-        {{
-            read
-            while read line; do
-                ifs="	"; thisLine=($line)
-                if [ ${{thisLine[WR1i]}} -gt $WR1Max ]; then
-                    WR1Max=${{thisLine[WR1i]}}
-                fi
-                if [ ${{thisLine[WR2i]}} -gt $WR2Max ]; then
-                    WR2Max=${{thisLine[WR2i]}}
-                fi
-                if [ ${{#thisLine[BR1i]}} -gt $BR1MaxLen ]; then
-                    BR1MaxLen=${{#thisLine[BR1i]}}
-                fi
-                if [ ${{#thisLine[BR2i]}} -gt $BR2MaxLen ]; then
-                    BR2MaxLen=${{#thisLine[BR2i]}}
-                fi
-            done
-        }} < {input.barcodes}
-        maxR1=$((cycles - BR1MaxLen - WR1Max))
-        maxR2=$((cycles - BR2MaxLen - WR2Max))
-        paste <(seqtk seq {input.unAssembled_1} | cut -c1-$maxR1) <(seqtk seq -r {input.unAssembled_2} |cut -c1-$maxR2|seqtk seq -r -)|cut -f1-5|sed '/^@/!s/\t/NNNNNNNN/g'| sed s/+NNNNNNNN+/+/g| sed 's/ /\t/' | cut -f1,2 |  pigz -p 1 -c > {output.joined_All}
-        ""
-"""
 
 rule combine_joined:
     params:
@@ -115,7 +31,7 @@ rule combine_joined:
         unAssembled_2=expand("{path}/output_denovo/monos/{sample}.joined_2.fastq.gz",path=config["output_dir"],sample=MONOS),
         barcodes=expand("{path}/{bar}", path=config["input_dir"], bar=config["barcode_filename"])
     output:
-        joined_combined=temp(expand("{path}/output_denovo/monos/{{sample}}.joined.fastq.gz",  path=config["output_dir"]))
+        joined_combined=(expand("{path}/output_denovo/monos/{{sample}}.joined.fastq.gz",  path=config["output_dir"]))
     conda: "../Envs/combine_reads.yaml"
     shell:
         """
@@ -166,7 +82,7 @@ rule combine_joined:
         maxR1=$((cycles - BR1MaxLen - WR1Max))
         maxR2=$((cycles - BR2MaxLen - WR2Max))
         paste <(seqtk seq {params.inputdir}/{params.sample}.joined_1.fastq.gz| cut -c1-$maxR1) <(seqtk seq -r {params.inputdir}/{params.sample}.joined_2.fastq.gz|cut -c1-$maxR2|seqtk seq -r -)|cut -f1-5|sed '/^@/!s/\t/NNNNNNNN/g'| sed s/+NNNNNNNN+/+/g| sed 's/ /\t/' | cut -f1,2 |  pigz -p 1 -c > {params.inputdir}/{params.sample}.joined.fastq.gz
-        """
+        """ # dit is een deel dezelfde code als barcode zooi in de prepro
 
 rule cat_monos:
     params:
@@ -176,7 +92,7 @@ rule cat_monos:
         joined_combined=expand("{path}/output_denovo/monos/{{sample}}.joined.fastq.gz",  path=config["output_dir"]),
         merged_Assembled=expand("{path}/output_denovo/monos/{{sample}}.merged.fastq.gz",  path=config["output_dir"])
     output:
-        monoFA=temp(expand("{path}/output_denovo/monos/{{sample}}.combined.fastq.gz",  path=config["output_dir"]))
+        monoFA=(expand("{path}/output_denovo/monos/{{sample}}.combined.fastq.gz",  path=config["output_dir"]))
     shell:
         """
         cat {input.joined_combined} {input.merged_Assembled} > {params.inputdir}/{params.sample}.combined.fastq.gz
@@ -189,7 +105,7 @@ rule sort:
     input:
         monoFA=expand("{path}/output_denovo/monos/{{sample}}.combined.fastq.gz",  path=config["output_dir"])
     output:
-        derep=temp(expand("{path}/output_denovo/monos/{{sample}}.sorted.fa",  path=config["output_dir"])),
+        derep=(expand("{path}/output_denovo/monos/{{sample}}.sorted.fa",  path=config["output_dir"])),
     conda: "../Envs/sort.yaml"
     shell:
         """
@@ -204,13 +120,13 @@ rule sort_2:
     input:
         derep=expand("{path}/output_denovo/monos/{sample}.derep.fa",  path=config["output_dir"],sample=MONOS)
     output:
-        derep=temp(expand("{path}/output_denovo/monos/{{sample}}.ordered.fa",  path=config["output_dir"]))
+        derep=(expand("{path}/output_denovo/monos/{{sample}}.ordered.fa",  path=config["output_dir"]))
     conda: "../Envs/sort.yaml"
     shell:
          "vsearch -sortbylength {params.inputdir}/{params.sample}.derep.fa "
          "--output {params.inputdir}/{params.sample}.ordered.fa"
 
-rule derep:
+rule derep:  #misschien is deze nu overbodig geworden
     params:
         sample='{sample}',
         inputdir=expand("{path}/output_denovo/monos",  path=config["output_dir"]),
@@ -218,7 +134,7 @@ rule derep:
     input:
         monoFA=expand("{path}/output_denovo/monos/{sample}.sorted.fa",  path=config["output_dir"],sample=MONOS)
     output:
-        derep=temp(expand("{path}/output_denovo/monos/{{sample}}.derep.fa",  path=config["output_dir"]))
+        derep=(expand("{path}/output_denovo/monos/{{sample}}.derep.fa",  path=config["output_dir"]))
     conda: "../Envs/derep.yaml"
     shell:
          "vsearch -derep_fulllength {params.inputdir}/{params.sample}.sorted.fa "
@@ -232,7 +148,7 @@ rule cluster:
     input:
         monoFA=expand("{path}/output_denovo/monos/{sample}.ordered.fa",  path=config["output_dir"],sample=MONOS),
     output:
-        derep=temp(expand("{path}/output_denovo/monos/{{sample}}.clustered.fa",  path=config["output_dir"]))
+        derep=expand("{path}/output_denovo/monos/{{sample}}.clustered.fa",  path=config["output_dir"])
     threads: 1
     conda: "../Envs/cluster.yaml"
     shell:
@@ -247,11 +163,10 @@ rule rename_fast:
     input:
         monoFA=expand("{path}/output_denovo/monos/{sample}.clustered.fa",  path=config["output_dir"],sample=MONOS),
     output:
-        derep=temp(expand("{path}/output_denovo/monos/{{sample}}.renamed.fa",  path=config["output_dir"]))
+        derep=(expand("{path}/output_denovo/monos/{{sample}}.renamed.fa",  path=config["output_dir"]))
     shell: 
         """
-        rm -f {params.inputdir}/{params.sample}.renamed.fa
-        touch {params.inputdir}/{params.sample}.renamed.fa
+        #touch {params.inputdir}/{params.sample}.renamed.fa
         number=""
         keep=FALSE
 
@@ -272,8 +187,8 @@ rule rename_fast:
             index=1
         fi
         while read line; do
-            if [[ "$line" =~ "^>.*" ]];
-            then
+            #if [[ "$line" =~ ^>.* ]]; then
+            if [[ $line == \>* ]]; then
                 index=$((index+1))
                 echo -e ">$genotype$index" >> {params.inputdir}/{params.sample}.renamed.fa
             elif [[ "$line" =~ ^@.* ]]
@@ -302,16 +217,14 @@ rule rename_fast:
                 echo "$line" >> {params.inputdir}/{params.sample}.renamed.fa
             fi
         done < {params.inputdir}/{params.sample}.clustered.fa
-        """
-
-        #moet combined hier niet clustered zijn? gezien de inputfile eznop
-
+        """ # hier is een bepaalde mogelijkheid van de flow nog niet uitgewerkt. de data waar ik mee werk komt hier 
+                #niet toe, maar moet nog wel worden gedaan.
 
 rule ref_out:
     input:
         monoFA=expand("{path}/output_denovo/monos/{sample}.renamed.fa",  path=config["output_dir"],sample=MONOS)
     output:
-        ref=temp(expand("{path}/output_denovo/ref.fa",path=config["output_dir"]))
+        ref=(expand("{path}/output_denovo/ref.fa",path=config["output_dir"]))
     params:
         inputdir=expand("{path}/output_denovo/",  path=config["output_dir"])
     shell:

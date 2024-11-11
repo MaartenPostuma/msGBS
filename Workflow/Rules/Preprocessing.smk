@@ -1,19 +1,35 @@
+# Authors v1.0 (Legacy): 
+# Authors v2.0 (New):       Jelle van der Heide
+# Date:                     ../../..
+# 
+# This file contains all msGBS pipeline functionality related to read pre-processing. 
+# -------------------------------------------------------------------------------------------------------------------
+
+
+
+
+# Considering the barcodefile contains a significant portion of data that is to be considered irrelevant,
+# this rule handles extracting relevant data from said file. This data is stored in a new, split-up barcodefile which
+# can in turn be used as input for other Rules instead of the bloated barcodefile.
+# -----
+# Input:    - A .tsv-file containing barcodes, which includes data surrounding their origin.
+# Output:   - A filtered version of the file mentioned above. Data irrelevant to the pre-processing-steps
+#             was removed from this version of the file to optimize data-extraction.
 rule split_barcode_file:
     input:
-        barcodes=expand("{input}/{barcodes}", input=config["input_dir"], barcodes=config["barcode_filename"])
-    params:
-        barcodesfiltered=expand("{output}/{barcodesfiltered}", output=config["output_dir"], barcodesfiltered=config["barcodefiltered_filename"])
+        barcodefile=expand("{input}/{barcodes}", input=config["input_dir"], barcodes=config["barcode_filename"])
     output:
-        barcodesfiltered=expand("{output}/{barcodesfiltered}", output=config["output_dir"], barcodesfiltered=config["barcodefiltered_filename"])
+        barcodefilefiltered=temp(expand("{output}/{barcodesfiltered}", output=config["output_dir"], barcodesfiltered=config["barcodefiltered_filename"]))
+    log: "../Logs/Preprocessing/split_barcode_file.log"
+    benchmark: "../Benchmarks/split_barcode_file.benchmark.txt"
+    #conda: None
+    threads: 1
     shell:    
         """
-        rm -f {params.barcodesfiltered}
-        header=$(awk 'NR==1 {{print; exit}}' {input.barcodes})
-        content=$(awk 'NR=2 {{print; exit}}' {input.barcodes})
+        header=$(awk 'NR==1 {{print; exit}}' {input.barcodefile})
         IFS="	"; headerList=($header)
 
-        for column in "${{!headerList[@]}}";
-        do
+        for column in "${{!headerList[@]}}"; do
             case "${{headerList[$column]}}" in
                 Barcode_R1)
                     barcodeR1Index="${{column}}"
@@ -28,14 +44,14 @@ rule split_barcode_file:
         done
 
         headersPassed=false
-        tail +2 {input.barcodes} | while read line; do
+        tail +2 {input.barcodefile} | while read line; do
             if [ $headersPassed ]; then
                     R1=$( echo "$line" |cut -f $(($barcodeR1Index + 1)))
                     R2=$( echo "$line" |cut -f $(($barcodeR2Index + 1)))
                     Sample=$( echo "$line" |cut -f $(($sampleIndex + 1)))
                 {{
                     printf "%s\t%s\t%s\n" "$R1" "$R2" "$Sample"
-                }} >> {params.barcodesfiltered}
+                }} >> {output.barcodefilefiltered}
             else
                 header=$( echo "$line")
                 headersPassed=true
@@ -43,26 +59,37 @@ rule split_barcode_file:
         done
         """   
 
+
+# All reads have to be trimmed for adapters and Poly-G's. Besides trimming, PCR duplicates and low-quality reads
+# are filtered out of the read files. with fastP. Afterwards, stacks is used to process radtags, which can be fetched 
+# from the filtered barcode-file.
+# -----
+# Input:    - A .tsv-file containing barcodes, which includes data surrounding their origin.
+#           - A filtered version of the file mentioned above. Data irrelevant to the pre-processing-steps.
+#             was removed from this version of the file to optimize data-extraction.
+#           - The first read file with raw reads.
+#           - The second read file with raw reads.
+# Output:   - The first file with trimmed reads, from which low quality reads and PCR duplicates have been removed. 
+#           - The second file with trimmed reads, from which low quality reads and PCR duplicates have been removed. 
+#           - Demultiplexed read files.
+#           - 
 rule deduplicate_trim:
+    params:
+        tmpdir=expand(tmpdirthis),
     input:
         barcodes=expand("{input}/{barcodes}", input=config["input_dir"], barcodes=config["barcode_filename"]),
         barcodesfiltered=expand("{output}/{barcodesfiltered}",output=config["output_dir"], barcodesfiltered=config["barcodefiltered_filename"]),
         oriR1=expand("{input}/{read1}",input=config["input_dir"],read1=config["Read1"]),
         oriR2=expand("{input}/{read2}",input=config["input_dir"],read2=config["Read2"])
-    params:
-        read1=read1_sub,
-        read2=read2_sub,
-        barcodesfiltered=expand("{output}/{barcodesfiltered}",output=config["output_dir"], barcodesfiltered=config["barcodefiltered_filename"]),
-        tmpdir=expand(tmpdirthis),
-        outputdir=expand("{output}/Preprocessing", output=config["output_dir"]),
-        inputdir=expand("{input}", input=config["input_dir"]),
-        clonedir=expand("{tmp}/{clonefiltered}", tmp=tmpdirthis, clonefiltered=config["clonefiltered_dir"])
     output:
-        filteredR1=temp(expand("{tmp}/{clonefiltered}/{name}.1.fq.gz", tmp=tmpdirthis, clonefiltered=config["clonefiltered_dir"], name=read1_sub)),
-        filteredR2=temp(expand("{tmp}/{clonefiltered}/{name}.2.fq.gz", tmp=tmpdirthis, clonefiltered=config["clonefiltered_dir"], name=read2_sub)),
-        demultiR1=temp(expand("{tmp}/{sample}.1.fq.gz", tmp=tmpdirthis, sample=SAMPLES)),
-        demultiR2=temp(expand("{tmp}/{sample}.2.fq.gz", tmp=tmpdirthis, sample=SAMPLES))
+        filteredR1=(expand("{tmp}/{clonefiltered}/{name}.1.fq.gz", tmp=tmpdirthis, clonefiltered=config["clonefiltered_dir"], name=read1_sub)),
+        filteredR2=(expand("{tmp}/{clonefiltered}/{name}.2.fq.gz", tmp=tmpdirthis, clonefiltered=config["clonefiltered_dir"], name=read2_sub)),
+        demultiR1=(expand("{tmp}/{sample}.1.fq.gz", tmp=tmpdirthis, sample=SAMPLES)),
+        demultiR2=(expand("{tmp}/{sample}.2.fq.gz", tmp=tmpdirthis, sample=SAMPLES))
+    log: "../Logs/Preprocessing/deduplicate_trim.log"
+    benchmark: "../Benchmarks/deduplicate_trim.benchmark.txt"
     conda: "../Envs/deduplication.yaml"
+    threads: 1
     shell:
         """
         header=$(awk 'NR==1 {{print; exit}}' {input.barcodes})
@@ -72,12 +99,6 @@ rule deduplicate_trim:
         for column in "${{!headerList[@]}}";
         do
             case "${{headerList[$column]}}" in
-                Wobble_R1)
-                    WR1=$( echo "$content" |cut -f $(("${{column}}" + 1)))
-                    ;;
-                Wobble_R2)
-                    WR2=$( echo "$content" |cut -f $(("${{column}}" + 1)))
-                    ;;
                 ENZ_R1)
                     ER1=$( echo "$content" |cut -f $(("${{column}}" + 1)))
                     ;;
@@ -86,11 +107,13 @@ rule deduplicate_trim:
                     ;;
             esac
         done
-        fastp --in1 {input.oriR1} --in2 {input.oriR2} --out1 {params.clonedir}/{params.read1}.1.fq.gz --out2 {params.clonedir}/{params.read2}.2.fq.gz --adapter_sequence ATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT --adapter_sequence_r2 CAAGCAGAAGACGGCATACGAGATCGGTCTCGGCATTCCTGCTGAACCGCTCTTCCGATCT --dedup --trim_poly_g --umi --umi_loc per_read --umi_len 3 -j ../Output/Preprocessing -h ../Output/Preprocessing
-        process_radtags -1 {params.clonedir}/{params.read1}.1.fq.gz -2 {params.clonedir}/{params.read2}.2.fq.gz -b {params.barcodesfiltered} -o {params.tmpdir} -r -D --inline_inline --renz_1 "$ER1" --renz_2 "$ER2" --retain_header --disable_rad_check
-        """
+        fastp --in1 {input.oriR1} --in2 {input.oriR2} --out1 {output.filteredR1} --out2 {output.filteredR2} --adapter_sequence ATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT --adapter_sequence_r2 CAAGCAGAAGACGGCATACGAGATCGGTCTCGGCATTCCTGCTGAACCGCTCTTCCGATCT --dedup --trim_poly_g --umi --umi_loc per_read --umi_len 3 -j ../Output/Preprocessing -h ../Output/Preprocessing
+        process_radtags -1 {output.filteredR1} -2 {output.filteredR2} -b {input.barcodesfiltered} -o {params.tmpdir} -r -D --inline_inline --renz_1 "$ER1" --renz_2 "$ER2" --retain_header --disable_rad_check
+        """ # radtags kan misschien naar de bovenstaande functie, dan kan ik die case samevoegen. is wat netter
+            # op dit moment heb ik niet helemaal duidelijk of demultiplexing wel echt gebeurt hier.
 
-rule headers:
+
+rule headers: #parallelisatie
     params:
         sample="{sample}",
         flowcell=flowCell,
@@ -103,8 +126,12 @@ rule headers:
         R1=expand("{tmp}/{sample}.1.fq.gz", tmp=tmpdirthis, sample=SAMPLES),
         R2=expand("{tmp}/{sample}.2.fq.gz", tmp=tmpdirthis, sample=SAMPLES)
     output:
-        headerR1=temp(expand("{tmp}/Preprocessing/Sampleheaders/{{sample}}.1.fq.gz",tmp=tmpdirthis)),
-        headerR2=temp(expand("{tmp}/Preprocessing/Sampleheaders/{{sample}}.2.fq.gz",tmp=tmpdirthis))
+        headerR1=(expand("{tmp}/Preprocessing/Sampleheaders/{{sample}}.1.fq.gz",tmp=tmpdirthis)),
+        headerR2=(expand("{tmp}/Preprocessing/Sampleheaders/{{sample}}.2.fq.gz",tmp=tmpdirthis))
+    log: "../Logs/Preprocessing/headers_{sample}.log"
+    benchmark: "../Benchmarks/headers.benchmark.txt"
+    #conda:
+    threads: 1
     shell:
         """
         for i in 1 2; do
@@ -113,7 +140,7 @@ rule headers:
         done
         """
 
-rule cat:
+rule cat: # parallelisatie
     params:
         path=expand("{path}/", path=tmpdirthis),
         outbase=expand("{path}/Preprocessing/demultiplexed_R",  path=config["output_dir"])
@@ -125,6 +152,9 @@ rule cat:
     output:
         outFileR1=expand("{path}/Preprocessing/demultiplexed_R1.fq.gz",  path=config["output_dir"]),
         outFileR2=expand("{path}/Preprocessing/demultiplexed_R2.fq.gz",  path=config["output_dir"])
+    log: "../Logs/Preprocessing/cat.log"
+    benchmark: "../Benchmarks/cat.benchmark.txt"
+    threads: 1
     shell:
         """
         for i in 1 2; do
@@ -132,25 +162,7 @@ rule cat:
         done
         """
 
-#rule trim:
-#    params:
-#        sample='{sample}',
-#        outputdir=expand("{path}",  path=tmpdirthis),
-#        preprosup=expand("{preprosup}", preprosup=config["preprocessingsup_dir"])
-#    input:
-#        R1_in=expand("{path}/Preprocessing/Sampleheaders/{sample}.1.fq.gz",path=tmpdirthis,sample=SAMPLES),
-#        R2_in=expand("{path}/Preprocessing/Sampleheaders/{sample}.2.fq.gz",path=tmpdirthis,sample=SAMPLES)
-#    output:
-#        R1_out=temp(expand("{path}/trimmed/{{sample}}.trimmed.pair1.truncated.gz",  path=tmpdirthis)),
-#        R2_out=temp(expand("{path}/trimmed/{{sample}}.trimmed.pair2.truncated.gz",  path=tmpdirthis))
-#    conda: "../Envs/read_trimming.yaml"
-#    shell:
-#        "AdapterRemoval --file1 {params.outputdir}/Preprocessing/Sampleheaders/{params.sample}.1.fq.gz "
-#        "--file2 {params.outputdir}/Preprocessing/Sampleheaders/{params.sample}.2.fq.gz "
-#        "--basename {params.outputdir}/trimmed/{params.sample}.trimmed --trimns --trimqualities "
-#        "--adapter-list {params.preprosup}/adapters.txt --gzip"
-
-rule move_monos:
+rule move_monos: 
     params:
         sample='{sample}',
         inputdir=expand("{path}/trimmed",  path=tmpdirthis),
@@ -164,6 +176,10 @@ rule move_monos:
     output:
         R1_demulti=expand("{path}/Preprocessing/monos/{{sample}}.demultiplexed_R1.fq.gz",  path=config["output_dir"]),
         R2_demulti=expand("{path}/Preprocessing/monos/{{sample}}.demultiplexed_R2.fq.gz",  path=config["output_dir"])
+    log: "../Logs/Preprocessing/move_monos_{sample}.log"
+    benchmark: "../Benchmarks/move_monos.benchmark.txt"
+    #conda:
+    threads: 1
     shell:
         """
         for i in 1 2; 

@@ -44,15 +44,15 @@ rule all:
     input:
         #unAssembled_1=expand("{path}/output_denovo/all.joined.fastq.gz",  path=config["output_dir"]),
         #merged_Assembled=expand("{path}/output_denovo/all.merged.fastq.gz",  path=config["output_dir"]),
-        ref=expand("{path}/output_blast/Eukaryota_ref.fa",path=config["output_dir"]),
         #log=expand("{path}/mapping/mapping_variantcalling.log",path=config["output_dir"]),
-        blast_file=expand("{path}/output_blast/outputblast_kingdoms.tsv",path=config["output_dir"]),
-        statscsv=expand("{path}/stats/stats.csv",path=config["output_dir"]),
-        bamOut=expand("{path}/mapping/mapping.bam",path=config["output_dir"]),
-        demulti_R1=expand("{path}/Preprocessing/demultiplexed_R1.fq.gz",  path=config["output_dir"]),
-        demulti_R2=expand("{path}/Preprocessing/demultiplexed_R2.fq.gz",  path=config["output_dir"]),
-        R1_sample_demulti=expand("{path}/Preprocessing/monos/{sample}.demultiplexed_R1.fq.gz",  path=config["output_dir"],sample=MONOS),
-        R2_sample_demulti=expand("{path}/Preprocessing/monos/{sample}.demultiplexed_R2.fq.gz",  path=config["output_dir"],sample=MONOS)
+        #ref=expand("{path}/output_blast/Eukaryota_ref.fa",path=config["output_dir"]),
+        #blast_file=expand("{path}/output_blast/outputblast_kingdoms.tsv",path=config["output_dir"]),
+        statscsv=expand("{path}/stats/stats.csv",path=config["output_dir"], sample=SAMPLES),
+        #bamOut=expand("{path}/mapping/mapping_{sample}.bam",path=config["output_dir"], sample=SAMPLES),
+        #demulti_R1=expand("{path}/Preprocessing/demultiplexed_R1.fq.gz",  path=config["output_dir"]),
+        #demulti_R2=expand("{path}/Preprocessing/demultiplexed_R2.fq.gz",  path=config["output_dir"]),
+        #R1_sample_demulti=expand("{path}/Preprocessing/monos/{sample}.demultiplexed_R1.fq.gz",  path=config["output_dir"],sample=MONOS),
+        #R2_sample_demulti=expand("{path}/Preprocessing/monos/{sample}.demultiplexed_R2.fq.gz",  path=config["output_dir"],sample=MONOS)
 
 """
 if star

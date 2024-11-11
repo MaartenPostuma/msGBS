@@ -1,0 +1,10 @@
+name: stats
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+    - pysam=0.22.1
+    - configargparse=0.13.0=py_1  
+    - pip:
+      - nested-dict==1.61 

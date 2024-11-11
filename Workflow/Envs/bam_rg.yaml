@@ -1,0 +1,7 @@
+name: bam_rg
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - picard=3.3.0
