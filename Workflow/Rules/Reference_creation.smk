@@ -166,7 +166,6 @@ rule rename_fast:
         derep=(expand("{path}/output_denovo/monos/{{sample}}.renamed.fa",  path=config["output_dir"]))
     shell: 
         """
-        #touch {params.inputdir}/{params.sample}.renamed.fa
         number=""
         keep=FALSE
 

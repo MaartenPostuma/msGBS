@@ -18,3 +18,8 @@ Read2: "readsRfull.fq.gz"
 min-depth: 2
 #Location of the blastDB
 blastDB: "../../../niels/blastdb"
+
+
+
+adapter1: "ATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT" 
+adapter2: "CAAGCAGAAGACGGCATACGAGATCGGTCTCGGCATTCCTGCTGAACCGCTCTTCCGATCT"

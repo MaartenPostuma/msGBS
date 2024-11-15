@@ -16,17 +16,24 @@
 # Output:   - A filtered version of the file mentioned above. Data irrelevant to the pre-processing-steps
 #             was removed from this version of the file to optimize data-extraction.
 rule split_barcode_file:
+    params:
+        tmpdir=config["tmp_dir"]
     input:
-        barcodefile=expand("{input}/{barcodes}", input=config["input_dir"], barcodes=config["barcode_filename"])
+        barcodefile=expand("{input}/{barcodes}", input=config["input_dir"], barcodes=config["barcode_filename"]),
+        filteredR1=(expand("{tmp}/{clonefiltered}/{name}.1.fq.gz", tmp=config["tmp_dir"], clonefiltered=config["clonefiltered_dir"], name=read1_sub)),
+        filteredR2=(expand("{tmp}/{clonefiltered}/{name}.2.fq.gz", tmp=config["tmp_dir"], clonefiltered=config["clonefiltered_dir"], name=read2_sub))
     output:
-        barcodefilefiltered=temp(expand("{output}/{barcodesfiltered}", output=config["output_dir"], barcodesfiltered=config["barcodefiltered_filename"]))
+        barcodefilefiltered=temp(expand("{output}/{barcodesfiltered}", output=config["output_dir"], barcodesfiltered=config["barcodefiltered_filename"])),
+        demultiR1=(expand("{tmp}/{sample}.1.fq.gz", tmp=config["tmp_dir"], sample=SAMPLES)),
+        demultiR2=(expand("{tmp}/{sample}.2.fq.gz", tmp=config["tmp_dir"], sample=SAMPLES))
     log: "../Logs/Preprocessing/split_barcode_file.log"
     benchmark: "../Benchmarks/split_barcode_file.benchmark.tsv"
-    #conda: None
-    threads: 1
+    conda: "../Envs/deduplication.yaml"
+    threads: 8
     shell:    
         """
         header=$(awk 'NR==1 {{print; exit}}' {input.barcodefile})
+        content=$(awk 'NR==2 {{print; exit}}' {input.barcodefile})
         IFS="	"; headerList=($header)
 
         for column in "${{!headerList[@]}}"; do
@@ -39,6 +46,12 @@ rule split_barcode_file:
                     ;;
                 Sample)
                     sampleIndex="${{column}}"
+                    ;;
+                ENZ_R1)
+                    ER1=$( echo "$content" |cut -f $(("${{column}}" + 1)))
+                    ;;
+                ENZ_R2)
+                    ER2=$( echo "$content" |cut -f $(("${{column}}" + 1)))
                     ;;
             esac
         done
@@ -57,7 +70,8 @@ rule split_barcode_file:
                 headersPassed=true
             fi
         done
-        2> {log}
+        
+        process_radtags -1 {input.filteredR1} -2 {input.filteredR2} -b {output.barcodefilefiltered} -o {params.tmpdir} -r -D --inline_inline --renz_1 "$ER1" --renz_2 "$ER2" --retain_header --disable_rad_check --threads 8
         """   
 
 
@@ -76,42 +90,22 @@ rule split_barcode_file:
 #           - 
 rule deduplicate_trim:
     params:
-        tmpdir=config["tmp_dir"]
+        adapter1=config["adapter1"],
+        adapter2=config["adapter2"]
     input:
-        barcodes=expand("{input}/{barcodes}", input=config["input_dir"], barcodes=config["barcode_filename"]),
-        barcodesfiltered=expand("{output}/{barcodesfiltered}",output=config["output_dir"], barcodesfiltered=config["barcodefiltered_filename"]),
         oriR1=expand("{input}/{read1}",input=config["input_dir"],read1=config["Read1"]),
         oriR2=expand("{input}/{read2}",input=config["input_dir"],read2=config["Read2"])
     output:
         filteredR1=(expand("{tmp}/{clonefiltered}/{name}.1.fq.gz", tmp=config["tmp_dir"], clonefiltered=config["clonefiltered_dir"], name=read1_sub)),
-        filteredR2=(expand("{tmp}/{clonefiltered}/{name}.2.fq.gz", tmp=config["tmp_dir"], clonefiltered=config["clonefiltered_dir"], name=read2_sub)),
-        demultiR1=(expand("{tmp}/{sample}.1.fq.gz", tmp=config["tmp_dir"], sample=SAMPLES)),
-        demultiR2=(expand("{tmp}/{sample}.2.fq.gz", tmp=config["tmp_dir"], sample=SAMPLES))
+        filteredR2=(expand("{tmp}/{clonefiltered}/{name}.2.fq.gz", tmp=config["tmp_dir"], clonefiltered=config["clonefiltered_dir"], name=read2_sub))
     log: "../Logs/Preprocessing/deduplicate_trim.log"
     benchmark: "../Benchmarks/deduplicate_trim.benchmark.tsv"
     conda: "../Envs/deduplication.yaml"
     threads: 8
     shell:
         """
-        header=$(awk 'NR==1 {{print; exit}}' {input.barcodes})
-        content=$(awk 'NR==2 {{print; exit}}' {input.barcodes})
-        IFS="	"; headerList=($header)
-
-        for column in "${{!headerList[@]}}";
-        do
-            case "${{headerList[$column]}}" in
-                ENZ_R1)
-                    ER1=$( echo "$content" |cut -f $(("${{column}}" + 1)))
-                    ;;
-                ENZ_R2)
-                    ER2=$( echo "$content" |cut -f $(("${{column}}" + 1)))
-                    ;;
-            esac
-        done
-        fastp --in1 {input.oriR1} --in2 {input.oriR2} --out1 {output.filteredR1} --out2 {output.filteredR2} --adapter_sequence ATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT --adapter_sequence_r2 CAAGCAGAAGACGGCATACGAGATCGGTCTCGGCATTCCTGCTGAACCGCTCTTCCGATCT --dedup --trim_poly_g --umi --umi_loc per_read --umi_len 3 -j ../Output/Preprocessing.json -h ../Output/Preprocessing.html -w 8
-        process_radtags -1 {output.filteredR1} -2 {output.filteredR2} -b {input.barcodesfiltered} -o {params.tmpdir} -r -D --inline_inline --renz_1 "$ER1" --renz_2 "$ER2" --retain_header --disable_rad_check --threads 8
-        """ # radtags kan misschien naar de bovenstaande functie, dan kan ik die case samevoegen. is wat netter
-            # op dit moment heb ik niet helemaal duidelijk of demultiplexing wel echt gebeurt hier.
+        fastp --in1 {input.oriR1} --in2 {input.oriR2} --out1 {output.filteredR1} --out2 {output.filteredR2} --adapter_sequence {params.adapter1} --adapter_sequence_r2 {params.adapter2} --dedup --trim_poly_g --umi --umi_loc per_read --umi_len 3 -j ../Output/Preprocessing.json -h ../Output/Preprocessing.html -w 8
+        """ 
 
 
 rule headers: 

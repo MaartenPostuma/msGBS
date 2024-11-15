@@ -12,3 +12,4 @@ Logs/
 Benchmarks/
 Workflow/blastStatistics.txt
 Workflow/time.txt
+Workflow/cleanup.sh
