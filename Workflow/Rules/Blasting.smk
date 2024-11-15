@@ -50,9 +50,10 @@ rule blastref:
         Archaea_contigs=()
         Bacteria_contigs=()
 
-        echo "nr of blast hits: "
-        wc -l {input.blast_file}
-        echo "-----------------------------------------"
+        echo "Total number of blast hits: " > blastStatistics.txt
+        wc -l {input.blast_file} >> blastStatistics.txt
+        echo "-----------------------------------------" >> blastStatistics.txt
+        echo "Total number of blast hits per Kingdom/phylum of interest:" >> blastStatistics.txt
 
         while IFS=";" read -r Br Eu Im Fu Gy Pt An Am; do
             if [[ $Br = *[![:space:]]* ]];
@@ -162,16 +163,16 @@ rule blastref:
         done < {input.blast_file}
 
 
-        echo "Bryophyta: " "${{#Bryophyta_contigs[@]}}"  
-        echo "Eukaryota: " "${{#Eukaryota_contigs[@]}}"  
-        echo "Imperia: " "${{#Imperia_contigs[@]}}"  
-        echo "Fungi: " "${{#Fungi_contigs[@]}}"  
-        echo "Arbuscular: " "${{#Arbuscular_contigs[@]}}"  
-        echo "Gymnospermae: " "${{#Gymnospermae_contigs[@]}}"  
-        echo "Pteridophyta: " "${{#Pteridophyta_contigs[@]}}"  
-        echo "Angiospermae: " "${{#Angiospermae_contigs[@]}}"  
-        echo "Archaea: " "${{#Archaea_contigs[@]}}"  
-        echo "Bacteria: " "${{#Bacteria_contigs[@]}}"                           
+        echo "\tBryophyta: " "${{#Bryophyta_contigs[@]}}" >> blastStatistics.txt
+        echo "\tEukaryota: " "${{#Eukaryota_contigs[@]}}"  >> blastStatistics.txt
+        echo "\tImperia: " "${{#Imperia_contigs[@]}}"  >> blastStatistics.txt
+        echo "\tFungi: " "${{#Fungi_contigs[@]}}"  >> blastStatistics.txt
+        echo "\tArbuscular: " "${{#Arbuscular_contigs[@]}}"  >> blastStatistics.txt
+        echo "\tGymnospermae: " "${{#Gymnospermae_contigs[@]}}"  >> blastStatistics.txt
+        echo "\tPteridophyta: " "${{#Pteridophyta_contigs[@]}}"  >> blastStatistics.txt
+        echo "\tAngiospermae: " "${{#Angiospermae_contigs[@]}}"  >> blastStatistics.txt
+        echo "\tArchaea: " "${{#Archaea_contigs[@]}}"  >> blastStatistics.txt
+        echo "\tBacteria: " "${{#Bacteria_contigs[@]}}" >> blastStatistics.txt                          
 
         for line in ${{Bryophyta_contigs[@]}}
         do
@@ -214,9 +215,9 @@ rule blastref:
             echo "$line" >> {params.outputDir}Bacteria.txt
         done        
 
-        echo "nr of ref-lines: "
-        wc -l {input.ref}
-        echo "-----------------------------------------"
+        echo "Total number of lines in reference-sequence before blast-filter:" >> blastStatistics.txt
+        awk 'END {{ print NR}}' {input.ref} >> blastStatistics.txt
+        echo "-----------------------------------------" >> blastStatistics.txt
         switchcase="NONE"
         while read line; do
             if [[ $line == \>* ]]; then

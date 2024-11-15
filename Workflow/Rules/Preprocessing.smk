@@ -21,7 +21,7 @@ rule split_barcode_file:
     output:
         barcodefilefiltered=temp(expand("{output}/{barcodesfiltered}", output=config["output_dir"], barcodesfiltered=config["barcodefiltered_filename"]))
     log: "../Logs/Preprocessing/split_barcode_file.log"
-    benchmark: "../Benchmarks/split_barcode_file.benchmark.txt"
+    benchmark: "../Benchmarks/split_barcode_file.benchmark.tsv"
     #conda: None
     threads: 1
     shell:    
@@ -57,6 +57,7 @@ rule split_barcode_file:
                 headersPassed=true
             fi
         done
+        2> {log}
         """   
 
 
@@ -75,21 +76,21 @@ rule split_barcode_file:
 #           - 
 rule deduplicate_trim:
     params:
-        tmpdir=expand(tmpdirthis),
+        tmpdir=config["tmp_dir"]
     input:
         barcodes=expand("{input}/{barcodes}", input=config["input_dir"], barcodes=config["barcode_filename"]),
         barcodesfiltered=expand("{output}/{barcodesfiltered}",output=config["output_dir"], barcodesfiltered=config["barcodefiltered_filename"]),
         oriR1=expand("{input}/{read1}",input=config["input_dir"],read1=config["Read1"]),
         oriR2=expand("{input}/{read2}",input=config["input_dir"],read2=config["Read2"])
     output:
-        filteredR1=(expand("{tmp}/{clonefiltered}/{name}.1.fq.gz", tmp=tmpdirthis, clonefiltered=config["clonefiltered_dir"], name=read1_sub)),
-        filteredR2=(expand("{tmp}/{clonefiltered}/{name}.2.fq.gz", tmp=tmpdirthis, clonefiltered=config["clonefiltered_dir"], name=read2_sub)),
-        demultiR1=(expand("{tmp}/{sample}.1.fq.gz", tmp=tmpdirthis, sample=SAMPLES)),
-        demultiR2=(expand("{tmp}/{sample}.2.fq.gz", tmp=tmpdirthis, sample=SAMPLES))
+        filteredR1=(expand("{tmp}/{clonefiltered}/{name}.1.fq.gz", tmp=config["tmp_dir"], clonefiltered=config["clonefiltered_dir"], name=read1_sub)),
+        filteredR2=(expand("{tmp}/{clonefiltered}/{name}.2.fq.gz", tmp=config["tmp_dir"], clonefiltered=config["clonefiltered_dir"], name=read2_sub)),
+        demultiR1=(expand("{tmp}/{sample}.1.fq.gz", tmp=config["tmp_dir"], sample=SAMPLES)),
+        demultiR2=(expand("{tmp}/{sample}.2.fq.gz", tmp=config["tmp_dir"], sample=SAMPLES))
     log: "../Logs/Preprocessing/deduplicate_trim.log"
-    benchmark: "../Benchmarks/deduplicate_trim.benchmark.txt"
+    benchmark: "../Benchmarks/deduplicate_trim.benchmark.tsv"
     conda: "../Envs/deduplication.yaml"
-    threads: 1
+    threads: 8
     shell:
         """
         header=$(awk 'NR==1 {{print; exit}}' {input.barcodes})
@@ -107,84 +108,67 @@ rule deduplicate_trim:
                     ;;
             esac
         done
-        fastp --in1 {input.oriR1} --in2 {input.oriR2} --out1 {output.filteredR1} --out2 {output.filteredR2} --adapter_sequence ATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT --adapter_sequence_r2 CAAGCAGAAGACGGCATACGAGATCGGTCTCGGCATTCCTGCTGAACCGCTCTTCCGATCT --dedup --trim_poly_g --umi --umi_loc per_read --umi_len 3 -j ../Output/Preprocessing -h ../Output/Preprocessing
-        process_radtags -1 {output.filteredR1} -2 {output.filteredR2} -b {input.barcodesfiltered} -o {params.tmpdir} -r -D --inline_inline --renz_1 "$ER1" --renz_2 "$ER2" --retain_header --disable_rad_check
+        fastp --in1 {input.oriR1} --in2 {input.oriR2} --out1 {output.filteredR1} --out2 {output.filteredR2} --adapter_sequence ATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT --adapter_sequence_r2 CAAGCAGAAGACGGCATACGAGATCGGTCTCGGCATTCCTGCTGAACCGCTCTTCCGATCT --dedup --trim_poly_g --umi --umi_loc per_read --umi_len 3 -j ../Output/Preprocessing.json -h ../Output/Preprocessing.html -w 8
+        process_radtags -1 {output.filteredR1} -2 {output.filteredR2} -b {input.barcodesfiltered} -o {params.tmpdir} -r -D --inline_inline --renz_1 "$ER1" --renz_2 "$ER2" --retain_header --disable_rad_check --threads 8
         """ # radtags kan misschien naar de bovenstaande functie, dan kan ik die case samevoegen. is wat netter
             # op dit moment heb ik niet helemaal duidelijk of demultiplexing wel echt gebeurt hier.
 
 
-rule headers: #parallelisatie
+rule headers: 
     params:
+        readfile="{readfile}",
         sample="{sample}",
         flowcell=flowCell,
         lane=lane,
-        header=expand("{tmp}/Preprocessing/Sampleheaders/{{sample}}", tmp=tmpdirthis),
-        Reads=expand("{tmp}/{{sample}}", tmp=tmpdirthis, sample=SAMPLES),
-        tmpdir=tmpdirthis
+        header=expand("{tmp}/Preprocessing/Sampleheaders/{{sample}}", tmp=config["tmp_dir"]),
+        Reads=expand("{tmp}/{{sample}}", tmp=config["tmp_dir"], sample=SAMPLES),
+        tmpdir=config["tmp_dir"]
     input:
         barcodesfiltered=expand("{output}/{barcodesfiltered}", output=config["output_dir"], barcodesfiltered=config["barcodefiltered_filename"]),
-        R1=expand("{tmp}/{sample}.1.fq.gz", tmp=tmpdirthis, sample=SAMPLES),
-        R2=expand("{tmp}/{sample}.2.fq.gz", tmp=tmpdirthis, sample=SAMPLES)
+        Reads=expand("{tmp}/{sample}.{readfile}.fq.gz", tmp=config["tmp_dir"], sample=SAMPLES, readfile=readfile),
     output:
-        headerR1=(expand("{tmp}/Preprocessing/Sampleheaders/{{sample}}.1.fq.gz",tmp=tmpdirthis)),
-        headerR2=(expand("{tmp}/Preprocessing/Sampleheaders/{{sample}}.2.fq.gz",tmp=tmpdirthis))
-    log: "../Logs/Preprocessing/headers_{sample}.log"
-    benchmark: "../Benchmarks/headers.benchmark.txt"
+        Header=(expand("{tmp}/Preprocessing/Sampleheaders/{{sample}}.{{readfile}}.fq.gz",tmp=config["tmp_dir"])),
+    log: "../Logs/Preprocessing/headers_{sample}_{readfile}.log"
+    benchmark: "../Benchmarks/headers_{sample}_{readfile}.benchmark.tsv"
     #conda:
     threads: 1
     shell:
         """
-        for i in 1 2; do
-            zcat {params.Reads}."$i".fq.gz | cut -f1 -d ' ' | 
-            sed -e '/^@/ s/$/\tRG:Z:{params.flowcell}_{params.lane}_{params.sample}/'| gzip -c   > {params.header}."$i".fq.gz
-        done
+        zcat {params.Reads}.{params.readfile}.fq.gz | cut -f1 -d ' ' | 
+        sed -e '/^@/ s/$/\tRG:Z:{params.flowcell}_{params.lane}_{params.sample}/'| gzip -c   > {params.header}.{params.readfile}.fq.gz
         """
 
-rule cat: # parallelisatie
+rule cat:
     params:
-        path=expand("{path}/", path=tmpdirthis),
+        readfile="{readfile}",
+        path=expand("{path}/", path=config["tmp_dir"]),
         outbase=expand("{path}/Preprocessing/demultiplexed_R",  path=config["output_dir"])
     input:
-        #R1_out=expand("{path}/trimmed/{sample}.trimmed.pair1.truncated.gz",path=tmpdirthis,sample=SAMPLES),
-        #R2_out=expand("{path}/trimmed/{sample}.trimmed.pair2.truncated.gz",path=tmpdirthis,sample=SAMPLES)
-        R1_in=expand("{path}/Preprocessing/Sampleheaders/{sample}.1.fq.gz",path=tmpdirthis, sample=SAMPLES),
-        R2_in=expand("{path}/Preprocessing/Sampleheaders/{sample}.2.fq.gz",path=tmpdirthis, sample=SAMPLES)
+        R=expand("{path}/Preprocessing/Sampleheaders/{sample}.{readfile}.fq.gz",path=config["tmp_dir"], sample=SAMPLES, readfile=readfile),
     output:
-        outFileR1=expand("{path}/Preprocessing/demultiplexed_R1.fq.gz",  path=config["output_dir"]),
-        outFileR2=expand("{path}/Preprocessing/demultiplexed_R2.fq.gz",  path=config["output_dir"])
-    log: "../Logs/Preprocessing/cat.log"
-    benchmark: "../Benchmarks/cat.benchmark.txt"
+        outFile=expand("{path}/Preprocessing/demultiplexed_R{{readfile}}.fq.gz",  path=config["output_dir"]),
+    log: "../Logs/Preprocessing/cat_{readfile}.log"
+    benchmark: "../Benchmarks/cat_{readfile}.benchmark.tsv"
     threads: 1
     shell:
         """
-        for i in 1 2; do
-            ls -v {params.path}Preprocessing/Sampleheaders/*."$i".fq.gz | xargs cat  >> {params.outbase}$i.fq.gz
-        done
+        ls -v {params.path}Preprocessing/Sampleheaders/*.{readfile}.fq.gz | xargs cat  >> {params.outbase}{readfile}.fq.gz
         """
 
 rule move_monos: 
     params:
+        readfile="{readfile}",
         sample='{sample}',
-        inputdir=expand("{path}/trimmed",  path=tmpdirthis),
         outputdir=expand("{path}/Preprocessing/monos", path=config["output_dir"]),
-        sampleHeaders=expand("{path}/Preprocessing/Sampleheaders/{{sample}}", path=tmpdirthis)
     input:
-        #R1_in=expand("{path}/trimmed/{sample}.trimmed.pair1.truncated.gz",  path=tmpdirthis,sample=MONOS),
-        #R2_in=expand("{path}/trimmed/{sample}.trimmed.pair2.truncated.gz",  path=tmpdirthis,sample=MONOS)
-        R1_in=expand("{path}/Preprocessing/Sampleheaders/{{sample}}.1.fq.gz",path=tmpdirthis),
-        R2_in=expand("{path}/Preprocessing/Sampleheaders/{{sample}}.2.fq.gz",path=tmpdirthis)
+        R=expand("{path}/Preprocessing/Sampleheaders/{{sample}}.{{readfile}}.fq.gz",path=config["tmp_dir"]),
     output:
-        R1_demulti=expand("{path}/Preprocessing/monos/{{sample}}.demultiplexed_R1.fq.gz",  path=config["output_dir"]),
-        R2_demulti=expand("{path}/Preprocessing/monos/{{sample}}.demultiplexed_R2.fq.gz",  path=config["output_dir"])
-    log: "../Logs/Preprocessing/move_monos_{sample}.log"
-    benchmark: "../Benchmarks/move_monos.benchmark.txt"
+        R_demulti=expand("{path}/Preprocessing/monos/{{sample}}.demultiplexed_R{{readfile}}.fq.gz",  path=config["output_dir"]),
+    log: "../Logs/Preprocessing/move_monos_{sample}_{readfile}.log"
+    benchmark: "../Benchmarks/move_monos_{sample}_{readfile}.benchmark.tsv"
     #conda:
     threads: 1
     shell:
         """
-        for i in 1 2; 
-        do
-            cp {params.sampleHeaders}."$i".fq.gz {params.outputdir}/{params.sample}.demultiplexed_R"$i".fq.gz
-        done
+        cp {input.R} {output.R_demulti}
         """
-

@@ -9,7 +9,7 @@ MONOS = df.index[df.index.str.contains("mono")]
 NONMONOS=df.index[~df.index.str.contains("mono")]
 flowCell = df.Flowcell[0]
 lane = df.Lane[0]
-tmpdirthis=config["tmp_dir"]+"/msGBS"+str(random.randint(1,1000000))
+readfile  = [1, 2]
 param_mind=config["min-depth"]
 read1=config["Read1"]
 read1_sub=read1.split(".")[0]
@@ -53,6 +53,8 @@ rule all:
         #demulti_R2=expand("{path}/Preprocessing/demultiplexed_R2.fq.gz",  path=config["output_dir"]),
         #R1_sample_demulti=expand("{path}/Preprocessing/monos/{sample}.demultiplexed_R1.fq.gz",  path=config["output_dir"],sample=MONOS),
         #R2_sample_demulti=expand("{path}/Preprocessing/monos/{sample}.demultiplexed_R2.fq.gz",  path=config["output_dir"],sample=MONOS)
+        #bamOut=temp(expand("{path}/mapping/mapping_sq.bam",path=config["output_dir"]))
+        #bamOut=expand("{path}/mapping/mapping_sq_{sample}.bam",path=config["output_dir"], sample=SAMPLES)
 
 """
 if star

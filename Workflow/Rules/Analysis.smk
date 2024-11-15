@@ -1,4 +1,4 @@
-rule bam_rg:
+rule bam_rg_bowtie:
     params:
         sample='{sample}'
     input:
@@ -15,13 +15,17 @@ rule bam_rg:
 
 rule bam_merge:
     input: 
+        # bowtie2
         bamIn=expand("{path}/mapping/mapping_rg_{sample}.bam",path=config["output_dir"], sample=SAMPLES)
+        # bwa-mem
+        #bamIn=expand("{path}/mapping/mapping_rg_{sample}.bam",path=config["output_dir"], sample=SAMPLES)
     output:
         bamOut=temp(expand("{path}/mapping/mapping_merged.bam",path=config["output_dir"]))
     threads:1
     conda: "../Envs/bam_merge.yaml"
     shell:
         """
+        date +%s%N >> time.txt
         samtools merge - {input.bamIn} | samtools sort > {output.bamOut}
         """
 
