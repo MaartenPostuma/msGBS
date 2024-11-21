@@ -42,7 +42,6 @@
 #        touch tmpfile.txt
 #        """
 
-
 #rule mapping_BWA:
 #    params:
 #        sample='{sample}',
@@ -66,22 +65,48 @@
 
 #rule mapping_Segemehl:
 
+rule mapping_star_index:
+    params:
+        tempMaps=expand("../Misc/mapping/indexed")
+    input:
+        refBlasted=expand("{path}/output_blast/Eukaryota_ref.fa",path=config["output_dir"]),
+    output:
+        genome=expand("{output}/mapping/index/Genome" , output=config["output_dir"]),
+    conda: "../Envs/star.yaml"
+    shell:
+        """
+        #logLen=awk'{{print log(*|||*genoomlengte*|||*)/log(2)}}'
+        #minimizedLog=loglen / 2 - 1
+        #if[minimizedLog > 14] then
+        #    genomeSAindexNbases=14
+        #else
+        #    genomeSAindexNbases= minimizedlog (splits op . en dan eerste waarde, of gewoon alleen flooren ofzo)#
+        STAR --genomeSAindexNbases 10 --runThreadN 4 --runMode genomeGenerate --genomeDir ../Output/mapping/index --genomeFastaFiles {input.refBlasted} --outTmpDir {params.tempMaps}
+        """
 
 rule mapping_Star:
     params:
+        r1out=temp(expand("{tmp}/Preprocessing/Sampleheaders/{{sample}}.1.fq", tmp=config["tmp_dir"])),
+        r2out=temp(expand("{tmp}/Preprocessing/Sampleheaders/{{sample}}.2.fq", tmp=config["tmp_dir"])),
         sample='{sample}'
     input:
+        genome=expand("{output}/mapping/index/Genome" , output=config["output_dir"]),
         refBlasted=expand("{path}/output_blast/Eukaryota_ref.fa",path=config["output_dir"]),
         r1=expand("{tmp}/Preprocessing/Sampleheaders/{{sample}}.1.fq.gz",  tmp=config["tmp_dir"]),#, sample=SAMPLES),
         r2=expand("{tmp}/Preprocessing/Sampleheaders/{{sample}}.2.fq.gz",  tmp=config["tmp_dir"])#, sample=SAMPLES)
-    output:
+    conda: "../Envs/star.yaml"
+    output:        
+        #r1out=temp(expand("{tmp}/Preprocessing/Sampleheaders/{{sample}}.1.fq", tmp=config["tmp_dir"])),
+        #r2out=temp(expand("{tmp}/Preprocessing/Sampleheaders/{{sample}}.2.fq", tmp=config["tmp_dir"])),
         samOut=temp(expand("{path}/mapping/mapping_rg_{{sample}}.sam",path=config["output_dir"])),
-        bamOut=expand("{path}/mapping/mapping_rg_{{sample}}.bam",path=config["output_dir"])
+        bamOut=expand("{path}/mapping/mapping_sq_{{sample}}.bam",path=config["output_dir"])
     threads: 16
     shell:
         """
-        STAR --runThreadN 4 --runMode genomeGenerate --genomeDir ../Output/mapping/index --genomeFastaFiles {input.refBlasted} --outTmpDir ../Misc/mapping/map_{params.sample}
-        STAR runThreadN 16 --genomeDir ../Output/mapping/index --readFilesIn {input.r1} {input.r2} --outSAMattributes NM MD AS --outSAMtype SAM --outFileNamePrefix ../Output/mapping --outFilterMatchNminOverLread 0.95 --clip3pNbases 1 --outSAMorder PairedKeepInputOrder --outFilterMultimapScoreRange 0 --alignEndsType Extend5pOfRead1 --scoreGapNoncan 0 --scoreGapGCAG 0 --scoreGapATAC 0 --scoreDelOpen 0 --scoreDelBase 0 --scoreInsOpen 0 --scoreInsBase 0 --alignMatesGapMax 20 --readMapNumber -1
+	gunzip {input.r1}
+	gunzip {input.r2}
+        STAR runThreadN 16 --genomeDir ../Output/mapping/index --readFilesIn {params.r1out} {params.r2out} --outSAMattributes NM MD AS --outSAMtype SAM --outFileNamePrefix ../Output/mapping/{params.sample}_ --outFilterMatchNminOverLread 0.95 --clip3pNbases 1 1 --outSAMorder PairedKeepInputOrder --outFilterMultimapScoreRange 0 --alignEndsType Extend5pOfRead1 --scoreGapNoncan 0 --scoreGapGCAG 0 --scoreGapATAC 0 --scoreDelOpen 0 --scoreDelBase 0 --scoreInsOpen 0 --scoreInsBase 0 --alignMatesGapMax 20 --readMapNumber -1
+        mv ../Output/mapping/{params.sample}_Aligned.out.sam {output.samOut}
         samtools view -b -o {output.bamOut} {output.samOut}
         """
 

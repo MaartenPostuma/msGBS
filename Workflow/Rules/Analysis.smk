@@ -1,4 +1,4 @@
-rule bam_rg_bowtie:
+rule bam_rg:
     params:
         sample='{sample}'
     input:
