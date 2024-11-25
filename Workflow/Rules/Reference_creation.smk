@@ -84,19 +84,45 @@ rule combine_joined:
         paste <(seqtk seq {params.inputdir}/{params.sample}.joined_1.fastq.gz| cut -c1-$maxR1) <(seqtk seq -r {params.inputdir}/{params.sample}.joined_2.fastq.gz|cut -c1-$maxR2|seqtk seq -r -)|cut -f1-5|sed '/^@/!s/\t/NNNNNNNN/g'| sed s/+NNNNNNNN+/+/g| sed 's/ /\t/' | cut -f1,2 |  pigz -p 1 -c > {params.inputdir}/{params.sample}.joined.fastq.gz
         """ # dit is een deel dezelfde code als barcode zooi in de prepro
 
-rule cat_monos:
+#rule cat_monos:
+#    params:
+#        sample='{sample}',
+#        inputdir=expand("{path}/output_denovo/monos",  path=config["output_dir"])
+#    input:
+#        joined_combined=expand("{path}/output_denovo/monos/{{sample}}.joined.fastq.gz",  path=config["output_dir"]),
+#        merged_Assembled=expand("{path}/output_denovo/monos/{{sample}}.merged.fastq.gz",  path=config["output_dir"])
+#    output:
+#        monoFA=(expand("{path}/output_denovo/monos/{{sample}}.combined.fastq.gz",  path=config["output_dir"]))
+#    shell:
+#        """
+#        cat {input.joined_combined} {input.merged_Assembled} > {params.inputdir}/{params.sample}.combined.fastq.gz
+#        """
+
+rule cat_joined_only:
     params:
         sample='{sample}',
         inputdir=expand("{path}/output_denovo/monos",  path=config["output_dir"])
     input:
         joined_combined=expand("{path}/output_denovo/monos/{{sample}}.joined.fastq.gz",  path=config["output_dir"]),
-        merged_Assembled=expand("{path}/output_denovo/monos/{{sample}}.merged.fastq.gz",  path=config["output_dir"])
     output:
         monoFA=(expand("{path}/output_denovo/monos/{{sample}}.combined.fastq.gz",  path=config["output_dir"]))
     shell:
         """
-        cat {input.joined_combined} {input.merged_Assembled} > {params.inputdir}/{params.sample}.combined.fastq.gz
+        cat {input.joined_combined} > {params.inputdir}/{params.sample}.combined.fastq.gz
         """
+
+#rule cat_merged_only:
+#    params:
+#        sample='{sample}',
+#        inputdir=expand("{path}/output_denovo/monos",  path=config["output_dir"])
+#    input:
+#        merged_Assembled=expand("{path}/output_denovo/monos/{{sample}}.merged.fastq.gz",  path=config["output_dir"])
+#    output:
+#        monoFA=(expand("{path}/output_denovo/monos/{{sample}}.combined.fastq.gz",  path=config["output_dir"]))
+#    shell:
+#        """
+#        cat {input.merged_Assembled} > {params.inputdir}/{params.sample}.combined.fastq.gz
+#        """
 
 rule sort:
     params:

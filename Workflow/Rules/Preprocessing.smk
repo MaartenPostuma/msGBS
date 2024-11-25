@@ -71,8 +71,8 @@ rule split_barcode_file:
             fi
         done
         
-        process_radtags -1 {input.filteredR1} -2 {input.filteredR2} -b {output.barcodefilefiltered} -o {params.tmpdir} -r -D --inline_inline --renz_1 "$ER1" --renz_2 "$ER2" --retain_header --disable_rad_check --threads 8
-        """   
+        process_radtags -1 {input.filteredR1} -2 {input.filteredR2} -b {output.barcodefilefiltered} -o {params.tmpdir} -r --inline_inline --renz_1 "$ER1" --renz_2 "$ER2" --retain_header --disable_rad_check --threads 8
+        """ # heb hier -D uit gehaald. deze wordt geloof ik niet echt gebruikt.   
 
 
 # All reads have to be trimmed for adapters and Poly-G's. Besides trimming, PCR duplicates and low-quality reads
