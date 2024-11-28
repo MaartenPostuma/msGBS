@@ -1,3 +1,5 @@
+
+# merget mono readparen als dit mogelijk is. wat niet kan worden gemerget komt in joined_1 en 2
 rule merge_mono:
     params:
         sample='{sample}',
@@ -21,6 +23,7 @@ rule merge_mono:
         "-w {params.preprosup}/qual_profile.txt -q 33 -u 41 -z -g"
 
 
+#joint de overgebleven readparen. dit komt in een volledig joined.fastq.gz bestand per mono
 rule combine_joined:
     params:
         sample='{sample}',
@@ -81,35 +84,38 @@ rule combine_joined:
 
         maxR1=$((cycles - BR1MaxLen - WR1Max))
         maxR2=$((cycles - BR2MaxLen - WR2Max))
-        paste <(seqtk seq {params.inputdir}/{params.sample}.joined_1.fastq.gz| cut -c1-$maxR1) <(seqtk seq -r {params.inputdir}/{params.sample}.joined_2.fastq.gz|cut -c1-$maxR2|seqtk seq -r -)|cut -f1-5|sed '/^@/!s/\t/NNNNNNNN/g'| sed s/+NNNNNNNN+/+/g| sed 's/ /\t/' | cut -f1,2 |  pigz -p 1 -c > {params.inputdir}/{params.sample}.joined.fastq.gz
-        """ # dit is een deel dezelfde code als barcode zooi in de prepro
+        paste <(seqtk seq {input.unAssembled_1} | cut -c1-141) <(seqtk seq -r {input.unAssembled_2} | cut -c1-141 | seqtk seq -r -) | cut -f1-5 | sed $'/^@/!s/\t/NNNNNNNN/g' | sed s/+NNNNNNNN+/+/g | sed $'s/ /\t/' | cut -f1,2 | pigz -p 1 -c > {output.joined_combined}
+        #paste <(seqtk seq {input.unAssembled_1} | cut -c1-$maxR1) <(seqtk seq -r {input.unAssembled_2} | cut -c1-$maxR2 | seqtk seq -r -) | cut -f1-5 | sed $'/^@/!s/\t/NNNNNNNN/g' | sed s/+NNNNNNNN+/+/g | sed $'s/ /\t/' | cut -f1,2 | pigz -p 1 -c > {output.joined_combined}
+        """ # dit is een deel dezelfde code als barcode zooi in de prepro 
+        # maxbc len kan in snakefile. bash kan dit niet blijkbaar
 
-#rule cat_monos:
-#    params:
-#        sample='{sample}',
-#        inputdir=expand("{path}/output_denovo/monos",  path=config["output_dir"])
-#    input:
-#        joined_combined=expand("{path}/output_denovo/monos/{{sample}}.joined.fastq.gz",  path=config["output_dir"]),
-#        merged_Assembled=expand("{path}/output_denovo/monos/{{sample}}.merged.fastq.gz",  path=config["output_dir"])
-#    output:
-#        monoFA=(expand("{path}/output_denovo/monos/{{sample}}.combined.fastq.gz",  path=config["output_dir"]))
-#    shell:
-#        """
-#        cat {input.joined_combined} {input.merged_Assembled} > {params.inputdir}/{params.sample}.combined.fastq.gz
-#        """
-
-rule cat_joined_only:
+# plak de merged en joined reads per mono aan elkaar in een bestand
+rule cat_monos:
     params:
         sample='{sample}',
         inputdir=expand("{path}/output_denovo/monos",  path=config["output_dir"])
     input:
         joined_combined=expand("{path}/output_denovo/monos/{{sample}}.joined.fastq.gz",  path=config["output_dir"]),
+        merged_Assembled=expand("{path}/output_denovo/monos/{{sample}}.merged.fastq.gz",  path=config["output_dir"])
     output:
         monoFA=(expand("{path}/output_denovo/monos/{{sample}}.combined.fastq.gz",  path=config["output_dir"]))
     shell:
         """
-        cat {input.joined_combined} > {params.inputdir}/{params.sample}.combined.fastq.gz
+        cat {input.joined_combined} {input.merged_Assembled} > {params.inputdir}/{params.sample}.combined.fastq.gz
         """
+
+#rule cat_joined_only:
+#    params:
+#        sample='{sample}',
+#        inputdir=expand("{path}/output_denovo/monos",  path=config["output_dir"])
+#    input:
+#        joined_combined=expand("{path}/output_denovo/monos/{{sample}}.joined.fastq.gz",  path=config["output_dir"]),
+#    output:
+ #       monoFA=(expand("{path}/output_denovo/monos/{{sample}}.combined.fastq.gz",  path=config["output_dir"]))
+ #   shell:
+ #       """
+ #       cat {input.joined_combined} > {params.inputdir}/{params.sample}.combined.fastq.gz
+ #       """
 
 #rule cat_merged_only:
 #    params:

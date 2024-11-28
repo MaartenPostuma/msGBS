@@ -4,7 +4,7 @@ rule bam_rg:
     input:
         bamIn=expand("{path}/mapping/mapping_sq_{{sample}}.bam",path=config["output_dir"])
     output:
-        bamOut=temp(expand("{path}/mapping/mapping_rg_{{sample}}.bam",path=config["output_dir"]))
+        bamOut=expand("{path}/mapping/mapping_rg_{{sample}}.bam",path=config["output_dir"])
     threads: 1
     conda:
         "../Envs/bam_rg.yaml"
@@ -20,7 +20,7 @@ rule bam_merge:
         # bwa-mem
         #bamIn=expand("{path}/mapping/mapping_rg_{sample}.bam",path=config["output_dir"], sample=SAMPLES)
     output:
-        bamOut=temp(expand("{path}/mapping/mapping_merged.bam",path=config["output_dir"]))
+        bamOut=expand("{path}/mapping/mapping_merged.bam",path=config["output_dir"])
     threads:1
     conda: "../Envs/bam_merge.yaml"
     shell:
