@@ -6,11 +6,12 @@ rule bam_rg:
     output:
         bamOut=expand("{path}/mapping/mapping_rg_{{sample}}.bam",path=config["output_dir"])
     threads: 1
+    log: "../Logs/Analysis/bam_rg_{sample}.log"
     conda:
         "../Envs/bam_rg.yaml"
     shell:
         """
-        picard AddOrReplaceReadGroups I={input.bamIn} O={output.bamOut} RGLB={params.sample} RGPL=illumina RGPU=unit RGSM={params.sample} RGID={params.sample}
+        picard AddOrReplaceReadGroups I={input.bamIn} O={output.bamOut} RGLB={params.sample} RGPL=illumina RGPU=unit RGSM={params.sample} RGID={params.sample} 2> {log}
         """
 
 rule bam_merge:

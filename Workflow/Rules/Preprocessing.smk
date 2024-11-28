@@ -71,7 +71,7 @@ rule split_barcode_file:
             fi
         done
         
-        process_radtags -1 {input.filteredR1} -2 {input.filteredR2} -b {output.barcodefilefiltered} -o {params.tmpdir} -r --inline_inline --renz_1 "$ER1" --renz_2 "$ER2" --retain_header --disable_rad_check --threads 8
+        process_radtags -1 {input.filteredR1} -2 {input.filteredR2} -b {output.barcodefilefiltered} -o {params.tmpdir} -r --inline_inline --renz_1 "$ER1" --renz_2 "$ER2" --retain_header --disable_rad_check --threads 8 2> {log}
         """ # heb hier -D uit gehaald. deze wordt geloof ik niet echt gebruikt.   
 
 
@@ -104,7 +104,7 @@ rule deduplicate_trim:
     threads: 8
     shell:
         """
-        fastp --in1 {input.oriR1} --in2 {input.oriR2} --out1 {output.filteredR1} --out2 {output.filteredR2} --adapter_sequence {params.adapter1} --adapter_sequence_r2 {params.adapter2} --dedup --trim_poly_g --umi --umi_loc per_read --umi_len 3 -j ../Output/Preprocessing.json -h ../Output/Preprocessing.html -w 8
+        fastp --in1 {input.oriR1} --in2 {input.oriR2} --out1 {output.filteredR1} --out2 {output.filteredR2} --adapter_sequence {params.adapter1} --adapter_sequence_r2 {params.adapter2} --dedup --trim_poly_g --umi --umi_loc per_read --umi_len 3 -j ../Output/Preprocessing.json -h ../Output/Preprocessing.html -w 8 2> {log}
         """ 
 
 

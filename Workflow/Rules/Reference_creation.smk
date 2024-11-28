@@ -14,13 +14,14 @@ rule merge_mono:
         unAssembled_2=(expand("{path}/output_denovo/monos/{{sample}}.joined_2.fastq.gz",  path=config["output_dir"])),
         merged_Assembled=(expand("{path}/output_denovo/monos/{{sample}}.merged.fastq.gz",  path=config["output_dir"]))
     threads: 1
+    log: "../Logs/Reference_creation/merge_mono_{sample}.log"
     conda: "../Envs/merge_reads.yaml"
     shell:
         "NGmerge -1 {params.inputdir}/{params.sample}.demultiplexed_R1.fq.gz "
         "-2 {params.inputdir}/{params.sample}.demultiplexed_R2.fq.gz "
         "-o {params.outputdir}/monos/{params.sample}.merged.fastq.gz -n {threads} "
         "-f {params.outputdir}/monos/{params.sample}.joined "
-        "-w {params.preprosup}/qual_profile.txt -q 33 -u 41 -z -g"
+        "-w {params.preprosup}/qual_profile.txt -q 33 -u 41 -z -g 2> {log}"
 
 
 #joint de overgebleven readparen. dit komt in een volledig joined.fastq.gz bestand per mono
@@ -33,6 +34,7 @@ rule combine_joined:
         unAssembled_1=expand("{path}/output_denovo/monos/{sample}.joined_1.fastq.gz",path=config["output_dir"],sample=MONOS),
         unAssembled_2=expand("{path}/output_denovo/monos/{sample}.joined_2.fastq.gz",path=config["output_dir"],sample=MONOS),
         barcodes=expand("{path}/{bar}", path=config["input_dir"], bar=config["barcode_filename"])
+    #log:
     output:
         joined_combined=(expand("{path}/output_denovo/monos/{{sample}}.joined.fastq.gz",  path=config["output_dir"]))
     conda: "../Envs/combine_reads.yaml"
@@ -85,7 +87,6 @@ rule combine_joined:
         maxR1=$((cycles - BR1MaxLen - WR1Max))
         maxR2=$((cycles - BR2MaxLen - WR2Max))
         paste <(seqtk seq {input.unAssembled_1} | cut -c1-141) <(seqtk seq -r {input.unAssembled_2} | cut -c1-141 | seqtk seq -r -) | cut -f1-5 | sed $'/^@/!s/\t/NNNNNNNN/g' | sed s/+NNNNNNNN+/+/g | sed $'s/ /\t/' | cut -f1,2 | pigz -p 1 -c > {output.joined_combined}
-        #paste <(seqtk seq {input.unAssembled_1} | cut -c1-$maxR1) <(seqtk seq -r {input.unAssembled_2} | cut -c1-$maxR2 | seqtk seq -r -) | cut -f1-5 | sed $'/^@/!s/\t/NNNNNNNN/g' | sed s/+NNNNNNNN+/+/g | sed $'s/ /\t/' | cut -f1,2 | pigz -p 1 -c > {output.joined_combined}
         """ # dit is een deel dezelfde code als barcode zooi in de prepro 
         # maxbc len kan in snakefile. bash kan dit niet blijkbaar
 
@@ -104,32 +105,6 @@ rule cat_monos:
         cat {input.joined_combined} {input.merged_Assembled} > {params.inputdir}/{params.sample}.combined.fastq.gz
         """
 
-#rule cat_joined_only:
-#    params:
-#        sample='{sample}',
-#        inputdir=expand("{path}/output_denovo/monos",  path=config["output_dir"])
-#    input:
-#        joined_combined=expand("{path}/output_denovo/monos/{{sample}}.joined.fastq.gz",  path=config["output_dir"]),
-#    output:
- #       monoFA=(expand("{path}/output_denovo/monos/{{sample}}.combined.fastq.gz",  path=config["output_dir"]))
- #   shell:
- #       """
- #       cat {input.joined_combined} > {params.inputdir}/{params.sample}.combined.fastq.gz
- #       """
-
-#rule cat_merged_only:
-#    params:
-#        sample='{sample}',
-#        inputdir=expand("{path}/output_denovo/monos",  path=config["output_dir"])
-#    input:
-#        merged_Assembled=expand("{path}/output_denovo/monos/{{sample}}.merged.fastq.gz",  path=config["output_dir"])
-#    output:
-#        monoFA=(expand("{path}/output_denovo/monos/{{sample}}.combined.fastq.gz",  path=config["output_dir"]))
-#    shell:
-#        """
-#        cat {input.merged_Assembled} > {params.inputdir}/{params.sample}.combined.fastq.gz
-#        """
-
 rule sort:
     params:
         sample='{sample}',
@@ -138,10 +113,11 @@ rule sort:
         monoFA=expand("{path}/output_denovo/monos/{{sample}}.combined.fastq.gz",  path=config["output_dir"])
     output:
         derep=(expand("{path}/output_denovo/monos/{{sample}}.sorted.fa",  path=config["output_dir"])),
+    log: "../Logs/Reference_creation/sort_{sample}.log"
     conda: "../Envs/sort.yaml"
     shell:
         """
-        vsearch -sortbylength {params.inputdir}/{params.sample}.combined.fastq.gz --output {params.inputdir}/{params.sample}.sorted.fa
+        vsearch -sortbylength {params.inputdir}/{params.sample}.combined.fastq.gz --output {params.inputdir}/{params.sample}.sorted.fa 2> {log}
         """
 
 
@@ -154,9 +130,10 @@ rule sort_2:
     output:
         derep=(expand("{path}/output_denovo/monos/{{sample}}.ordered.fa",  path=config["output_dir"]))
     conda: "../Envs/sort.yaml"
+    log: "../Logs/Reference_creation/sort_2_{sample}.log"
     shell:
          "vsearch -sortbylength {params.inputdir}/{params.sample}.derep.fa "
-         "--output {params.inputdir}/{params.sample}.ordered.fa"
+         "--output {params.inputdir}/{params.sample}.ordered.fa 2> {log}"
 
 rule derep:  #misschien is deze nu overbodig geworden
     params:
@@ -168,9 +145,10 @@ rule derep:  #misschien is deze nu overbodig geworden
     output:
         derep=(expand("{path}/output_denovo/monos/{{sample}}.derep.fa",  path=config["output_dir"]))
     conda: "../Envs/derep.yaml"
+    log: "../Logs/Reference_creation/derep_{sample}.log"
     shell:
          "vsearch -derep_fulllength {params.inputdir}/{params.sample}.sorted.fa "
-         "-sizeout -minuniquesize {params.minSize}  -output {params.inputdir}/{params.sample}.derep.fa"
+         "-sizeout -minuniquesize {params.minSize}  -output {params.inputdir}/{params.sample}.derep.fa 2> {log}"
 
 rule cluster:
     params:
@@ -183,9 +161,10 @@ rule cluster:
         derep=expand("{path}/output_denovo/monos/{{sample}}.clustered.fa",  path=config["output_dir"])
     threads: 1
     conda: "../Envs/cluster.yaml"
+    log: "../Logs/Reference_creation/sluster{sample}.log"
     shell:
          "vsearch -cluster_smallmem {params.inputdir}/{params.sample}.ordered.fa -id 0.95 "
-         "-centroids {params.inputdir}/{params.sample}.clustered.fa -sizeout -strand both --threads {threads} "
+         "-centroids {params.inputdir}/{params.sample}.clustered.fa -sizeout -strand both --threads {threads} 2> {log}"
 
 rule rename_fast:
     params:
