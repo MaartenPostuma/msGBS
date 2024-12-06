@@ -33,7 +33,7 @@ rule combine_joined:
     input:
         unAssembled_1=expand("{path}/output_denovo/monos/{sample}.joined_1.fastq.gz",path=config["output_dir"],sample=MONOS),
         unAssembled_2=expand("{path}/output_denovo/monos/{sample}.joined_2.fastq.gz",path=config["output_dir"],sample=MONOS),
-        barcodes=expand("{path}/{bar}", path=config["input_dir"], bar=config["barcode_filename"])
+        barcodes=expand("{path}/{bar}", path=config["input_dir"], bar=config["barcode_file"])
     #log:
     output:
         joined_combined=(expand("{path}/output_denovo/monos/{{sample}}.joined.fastq.gz",  path=config["output_dir"]))
