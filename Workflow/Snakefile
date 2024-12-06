@@ -3,7 +3,7 @@ configfile: "../Config/config.yaml"
 import pandas as pd
 import os
 import random
-df = pd.read_csv(os.path.join(config["input_dir"],config["barcode_filename"]), sep='\t', index_col='Sample')
+df = pd.read_csv(os.path.join(config["input_dir"],config["barcode_file"]), sep='\t', index_col='Sample')
 SAMPLES = df.index
 MONOS = df.index[df.index.str.contains("mono")]
 NONMONOS=df.index[~df.index.str.contains("mono")]
