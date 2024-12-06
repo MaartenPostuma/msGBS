@@ -1,4 +1,4 @@
-name: bowtie2
+name: star
 channels:
   - bioconda
   - conda-forge

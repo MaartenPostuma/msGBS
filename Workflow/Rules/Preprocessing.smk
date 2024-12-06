@@ -15,17 +15,17 @@
 # Input:    - A .tsv-file containing barcodes, which includes data surrounding their origin.
 # Output:   - A filtered version of the file mentioned above. Data irrelevant to the pre-processing-steps
 #             was removed from this version of the file to optimize data-extraction.
-rule split_barcode_file:
+rule split_barcodes_process_radtags:
     params:
         tmpdir=config["tmp_dir"]
     input:
-        barcodefile=expand("{input}/{barcodes}", input=config["input_dir"], barcodes=config["barcode_filename"]),
+        barcodefile=(expand("{input}/{barcodes}", input=config["input_dir"], barcodes=config["barcode_file"])),
         filteredR1=(expand("{tmp}/{clonefiltered}/{name}.1.fq.gz", tmp=config["tmp_dir"], clonefiltered=config["clonefiltered_dir"], name=read1_sub)),
         filteredR2=(expand("{tmp}/{clonefiltered}/{name}.2.fq.gz", tmp=config["tmp_dir"], clonefiltered=config["clonefiltered_dir"], name=read2_sub))
     output:
-        barcodefilefiltered=temp(expand("{output}/{barcodesfiltered}", output=config["output_dir"], barcodesfiltered=config["barcodefiltered_filename"])),
-        demultiR1=(expand("{tmp}/{sample}.1.fq.gz", tmp=config["tmp_dir"], sample=SAMPLES)),
-        demultiR2=(expand("{tmp}/{sample}.2.fq.gz", tmp=config["tmp_dir"], sample=SAMPLES))
+        barcodefilefiltered=(expand("{output}/{barcodesfiltered}", output=config["output_dir"], barcodesfiltered=config["barcodefiltered_filename"])),
+        demultiplexedR1=(expand("{tmp}/{sample}.1.fq.gz", tmp=config["tmp_dir"], sample=SAMPLES)),
+        demultiplexedR2=(expand("{tmp}/{sample}.2.fq.gz", tmp=config["tmp_dir"], sample=SAMPLES))
     log: "../Logs/Preprocessing/split_barcode_file.log"
     benchmark: "../Benchmarks/split_barcode_file.benchmark.tsv"
     conda: "../Envs/deduplication.yaml"
@@ -72,7 +72,7 @@ rule split_barcode_file:
         done
         
         process_radtags -1 {input.filteredR1} -2 {input.filteredR2} -b {output.barcodefilefiltered} -o {params.tmpdir} -r --inline_inline --renz_1 "$ER1" --renz_2 "$ER2" --retain_header --disable_rad_check --threads 8 2> {log}
-        """ # heb hier -D uit gehaald. deze wordt geloof ik niet echt gebruikt.   
+        """
 
 
 # All reads have to be trimmed for adapters and Poly-G's. Besides trimming, PCR duplicates and low-quality reads

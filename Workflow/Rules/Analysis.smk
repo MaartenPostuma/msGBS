@@ -16,18 +16,15 @@ rule bam_rg:
 
 rule bam_merge:
     input: 
-        # bowtie2
         bamIn=expand("{path}/mapping/mapping_rg_{sample}.bam",path=config["output_dir"], sample=SAMPLES)
-        # bwa-mem
-        #bamIn=expand("{path}/mapping/mapping_rg_{sample}.bam",path=config["output_dir"], sample=SAMPLES)
     output:
         bamOut=expand("{path}/mapping/mapping_merged.bam",path=config["output_dir"])
     threads:1
     conda: "../Envs/bam_merge.yaml"
+    log: "../Logs/Analysis/bam_merge.log"
     shell:
         """
-        date +%s%N >> time.txt
-        samtools merge - {input.bamIn} | samtools sort > {output.bamOut}
+        samtools merge - {input.bamIn} | samtools sort > {output.bamOut} 2> {log}
         """
 
 rule stats:
@@ -37,6 +34,8 @@ rule stats:
         statscsv=expand("{path}/stats/stats.csv",path=config["output_dir"])
     conda: "../Envs/stats.yaml"
     shell:
+        "echo 'Finished mapping' >> time.txt"
+        "date +%s%N >> time.txt"
         "python Scripts/msGBS_STATS.py "
         "-i {input.bamOut} "
-        "-o {output.statscsv}"
+        "-o {output.statscsv}" # this also has a bit of outpout that could be sent to a log
