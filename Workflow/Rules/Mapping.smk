@@ -85,7 +85,7 @@ rule mapping_star_index:
         """
         echo "Commencing Bowtie mapping" >> time.txt
         date +%s%N >> time.txt
-        STAR --genomeSAindexNbases 10 --runThreadN 4 --runMode genomeGenerate --genomeDir ../Output/mapping/index --genomeFastaFiles {input.refBlasted} --outTmpDir {params.tempMaps} 2> {log}
+        STAR --genomeSAindexNbases 10 --runThreadN 4 --runMode genomeGenerate --genomeDir ../Output/mapping/index --genomeFastaFiles {input.refBlasted} --outTmpDir {params.tempMaps} -limitGenomeGenerateRAM 1600000000000 2> {log}
         """
 
 rule mapping_Star:
