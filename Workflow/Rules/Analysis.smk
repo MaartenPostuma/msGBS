@@ -34,8 +34,9 @@ rule stats:
         statscsv=expand("{path}/stats/stats.csv",path=config["output_dir"])
     conda: "../Envs/stats.yaml"
     shell:
-        "echo 'Finished mapping' >> time.txt"
-        "date +%s%N >> time.txt"
-        "python Scripts/msGBS_STATS.py "
-        "-i {input.bamOut} "
-        "-o {output.statscsv}" # this also has a bit of outpout that could be sent to a log
+        """
+        echo 'Finished mapping' >> time.txt 
+        date +%s%N >> time.txt 
+        python Scripts/msGBS_STATS.py -i {input.bamOut} -o {output.statscsv}
+        """
+ # this also has a bit of outpout that could be sent to a log
