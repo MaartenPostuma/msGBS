@@ -5,7 +5,7 @@ rule merge_mono:
         sample='{sample}',
         inputdir=expand("{path}/Preprocessing/monos",  path=config["output_dir"]),
         outputdir=expand("{path}/output_denovo/",  path=config["output_dir"]),
-        preprosup=expand("{preprosup}", preprosup=config["preprocessingsup_dir"])
+        preprosup=expand("{preprosup}", preprosup=config["sup_dir"])
     input:
         R1_in=expand("{path}/Preprocessing/monos/{sample}.demultiplexed_R1.fq.gz",  path=config["output_dir"],sample=MONOS),
         R2_in=expand("{path}/Preprocessing/monos/{sample}.demultiplexed_R2.fq.gz",  path=config["output_dir"],sample=MONOS)

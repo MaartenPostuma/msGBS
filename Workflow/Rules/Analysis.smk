@@ -32,11 +32,43 @@ rule stats:
         bamOut=expand("{path}/mapping/mapping_merged.bam",path=config["output_dir"])
     output:
         statscsv=expand("{path}/stats/stats.csv",path=config["output_dir"])
+    log: 
+        out="../Logs/Analysis/stats.out.log",
+        err="../Logs/Analysis/stats.err.log"
     conda: "../Envs/stats.yaml"
     shell:
         """
         echo 'Finished mapping' >> time.txt 
         date +%s%N >> time.txt 
-        python Scripts/msGBS_STATS.py -i {input.bamOut} -o {output.statscsv}
+        python Scripts/msGBS_STATS.py -i {input.bamOut} -o {output.statscsv} > {log.out} 2> {log.err}
         """
- # this also has a bit of outpout that could be sent to a log
+
+rule filter:
+    input: 
+        statscsv=expand("{path}/stats/stats.csv",path=config["output_dir"])
+    log: 
+        out="../Logs/Analysis/filter.out.log", 
+        err="../Logs/Analysis/filter.err.log",
+        log="../Logs/Analysis/filter.log.log"
+    output:
+        Data1=expand("{path}/stats/Data_1_Clusters_Target_vs_Reason_to_remove_8_15_1000_summed_per_species.txt", path=config["output_dir"]),
+        Data2=expand("{path}/stats/Data_2_Clusters_filtered_due_to_homology_to_8_15_1000.txt", path=config["output_dir"]),
+        Data3=expand("{path}/stats/Data_3_READ_COUNT_removed_CLUSTERS_SUM_8_15_1000.csv", path=config["output_dir"]),
+        Data4=expand("{path}/stats/Data_4_SUM_8_15_1000.csv", path=config["output_dir"]),
+        Data5=expand("{path}/stats/Data_5_SUM_MINREAD_FILTER_8_15_1000.csv", path=config["output_dir"])
+    shell:
+        """
+        python Scripts/Parse_csv_Jelle_final.py -i {input.statscsv} -log {log.log} -f1 8 -f2 15 -f3 1000 -op ../Output/stats/ > {log.out} 2> {log.err}
+        """
+
+"""
+rule logging:
+    input:
+        #alle logs
+    output:
+        #multiqc log
+    conda:
+        # multiqc log env
+    shell:
+        # multiqc command
+        """

@@ -20,7 +20,7 @@ rule blastref:
     input:
         ref=expand("{path}/output_denovo/ref.fa",path=config["output_dir"]),
         blast_file=expand("{path}/output_blast/outputblast_kingdoms.tsv",path=config["output_dir"]),
-        genus_lists=expand("{path}", path=config["genus"])
+        genus_lists=expand("{sup_dir}/{path}", path=config["genus"], sup_dir=config["sup_dir"])
     output:
         refBlasted=expand("{path}/output_blast/Eukaryota_ref.fa",path=config["output_dir"]),
         stats=expand("{path}/output_blast/blastStatistics.txt", path=config["output_dir"])

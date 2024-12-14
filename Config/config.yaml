@@ -1,19 +1,7 @@
-barcodefiltered_filename: "barcodes_filtered.tsv"
-clonefiltered_dir          : "Preprocessing/Clonefiltered"
-preprocessingsup_dir          : "Supplement/Preprocessing" 
-genus:          "Supplement/Blasting/Relevant_organisms.csv"
-
-
 # should be divisible by 4
 max_threads: 16
-
 #number of sequencing cycles
 cycles        : 150
-#Sequence Reads
-#Read1 : "readsF.fq.gz"
-Read1: "readsFfull.fq.gz"
-#Read2 : "readsR.fq.gz"
-Read2: "readsRfull.fq.gz"
 #Minimal cluster depth
 min-depth: 2
 #Location of the blastDB
@@ -23,14 +11,42 @@ blastDB: "../../../niels/blastdb"
 output_dir    : "../Output"
 input_dir     : "../Input"
 tmp_dir       : "../Misc"
+sup_dir       : "Supplement" 
+
+# -- general sub folders
+preprocessing_out: "../Output/Preprocessing"
+preprocessing_tmp: "../Misc/Preprocessing"
+
+blasting_out:   "../Output/Blasting"
+blasting_tmp:   "../Misc/Blasting"
+
+referencecreation_out: "../Output/Referencecreation"
+referencecreation_tmp: "../Misc/Referencecreation"
+
+mapping_out: "../Output/Mapping"
+mapping_tmp: "../Misc/Mapping"
+
+analysis_out: "../Output/Analysis"
+analysis_tmp: "../Misc/Analysis"
+
+# -- specific sub folders
+deduplicated_dir  : "../Misc/Preprocessing/Deduplicated"
+demultiplexed_dir : "../Misc/Preprocessing/Demultiplexed"
+readgrouped_dir   : "../Misc/Preprocessing/Readgrouped"
+
+# -- filenames
+Read1   : "readsFfull.fq.gz"
+Read2   : "readsRfull.fq.gz"
+genus   : "Relevant_organisms.csv"
 
 # -- Preprocessing
 barcode_file: "barcodes.tsv"
+barcodefiltered_file: "barcodefiltered.tsv"
 
 
 
 
-
+#(goed om hier de kolomnamen van de barcode file in te laten vullen. scheelt werk.)
 
 
 

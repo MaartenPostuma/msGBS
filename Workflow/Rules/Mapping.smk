@@ -3,7 +3,8 @@ rule mapping_Bowtie2_index:
         refBlasted=expand("{path}/output_blast/Eukaryota_ref.fa",path=config["output_dir"]),
     output:
         index=expand("{path}/mapping/index.1.bt2", path=config["output_dir"])
-    log: "../Logs/Mapping/mapping_bowtie2_index.log"
+    log:out="../Logs/Mapping/mapping_bowtie2_index.out.log", 
+        err="../Logs/Mapping/mapping_bowtie2_index.err.log"
     conda: "../Envs/bowtie2.yaml"
     benchmark:"../Benchmarks/mapping_Bowtie2_index.benchmark.tsv"
     threads: 32
@@ -11,8 +12,8 @@ rule mapping_Bowtie2_index:
         """
         echo "Commencing Bowtie mapping" >> time.txt
         date +%s%N >> time.txt
-        bowtie2-build -f {input.refBlasted} ../Output/mapping/index -p {threads} 2> {log}
-        """ # Hier is nog enige output in de console die naar de log moet worden gestuurd
+        bowtie2-build -f {input.refBlasted} ../Output/mapping/index -p {threads} > {log.out} 2> {log.err}
+        """
 
 rule mapping_Bowtie2:   
     params:

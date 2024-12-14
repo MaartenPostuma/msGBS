@@ -47,7 +47,7 @@ rule all:
         #log=expand("{path}/mapping/mapping_variantcalling.log",path=config["output_dir"]),
         #ref=expand("{path}/output_blast/Eukaryota_ref.fa",path=config["output_dir"]),
         #blast_file=expand("{path}/output_blast/outputblast_kingdoms.tsv",path=config["output_dir"]),
-        statscsv=expand("{path}/stats/stats.csv",path=config["output_dir"], sample=SAMPLES),
+        #statscsv=expand("{path}/stats/stats.csv",path=config["output_dir"], sample=SAMPLES),
         #bamOut=expand("{path}/mapping/mapping_{sample}.bam",path=config["output_dir"], sample=SAMPLES),
         #demulti_R1=expand("{path}/Preprocessing/demultiplexed_R1.fq.gz",  path=config["output_dir"]),
         #demulti_R2=expand("{path}/Preprocessing/demultiplexed_R2.fq.gz",  path=config["output_dir"]),
@@ -55,6 +55,11 @@ rule all:
         #R2_sample_demulti=expand("{path}/Preprocessing/monos/{sample}.demultiplexed_R2.fq.gz",  path=config["output_dir"],sample=MONOS)
         #bamOut=temp(expand("{path}/mapping/mapping_sq.bam",path=config["output_dir"]))
         #bamOut=expand("{path}/mapping/mapping_sq_{sample}.bam",path=config["output_dir"], sample=SAMPLES)
+        Data1=expand("{path}/stats/Data_1_Clusters_Target_vs_Reason_to_remove_8_15_1000_summed_per_species.txt", path=config["output_dir"]),
+        Data2=expand("{path}/stats/Data_2_Clusters_filtered_due_to_homology_to_8_15_1000.txt", path=config["output_dir"]),
+        Data3=expand("{path}/stats/Data_3_READ_COUNT_removed_CLUSTERS_SUM_8_15_1000.csv", path=config["output_dir"]),
+        Data4=expand("{path}/stats/Data_4_SUM_8_15_1000.csv", path=config["output_dir"]),
+        Data5=expand("{path}/stats/Data_5_SUM_MINREAD_FILTER_8_15_1000.csv", path=config["output_dir"])
 
 """
 if star
