@@ -1,7 +1,7 @@
-name: segemehl
+name: logging
 channels:
   - bioconda
   - conda-forge
   - defaults
 dependencies:
-  - segemehl=0.3.4
+  - multiqc=1.25.2

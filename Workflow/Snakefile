@@ -1,79 +1,62 @@
-configfile: "../Config/config.yaml"
+# Authors v1.0 (Legacy):    ..., ..., ... & ...
+# Authors v2.0 (New):       Jelle van der Heide
+# Date:                     ../../..
+# 
+# This is the main msGBS pipeline file. Here, the environment-variables are defined and a connection is 
+# made between the rule all and the additional rule-files.
+# --------------------------------------------------------------------------------------------------------------------
 
 import pandas as pd
 import os
-import random
+
+configfile: "../Config/config.yaml"
+
+# -- define dataframe from barcodefile.
 df = pd.read_csv(os.path.join(config["input_dir"],config["barcode_file"]), sep='\t', index_col='Sample')
+df['sample']=df.index
+df['run'] = df['rawR1'].str.replace("_R1.fq.gz","",regex=False)
+
+# -- define wildcards from the barcode dataframe.
 SAMPLES = df.index
 MONOS = df.index[df.index.str.contains("mono")]
 NONMONOS=df.index[~df.index.str.contains("mono")]
-flowCell = df.Flowcell[0]
-lane = df.Lane[0]
+RUN = df.rawR1.str.replace("_R1.fq.gz","",regex=False).unique()
 readfile  = [1, 2]
-param_mind=config["min-depth"]
-read1=config["Read1"]
-read1_sub=read1.split(".")[0]
-read2=config["Read2"]
-read2_sub=read2.split(".")[0]
+grouped = df.groupby("run")["sample"].apply(set)
+LANESAMPLE = grouped.to_dict()
 
-def getParam_mind(param_mind):
-    if param_mind=="default" or param_mind == "":
-        mind = 2
-    else:
-        mind = param_mind
-    return mind
+# -- define variables from the barcode dataframe.
+lane = df.Lane[0]
+flowCell = df.Flowcell[0]
+DUPES=df.index.duplicated().any()
+SAMPLES = {}
+for lane, samples in LANESAMPLE.items():
+    for sample in samples:
+        SAMPLES[sample] = lane
 
-param_cycle=config["cycles"]
-def getParam_cycle(param_cycle):
-    if param_cycle=="default" or param_cycle == "":
-        cycle = 150
-    else:
-        cycle = param_cycle
-    return cycle
+# -- define run conditions from config.
+if config["mapper_mode"]=="All":
+    MAPPER=["Bowtie", "Bwa", "Star"]
+else:
+    MAPPER=config["mapper_mode"]
 
+# -- define which rule-files to implement.
 include: "Rules/Preprocessing.smk"
 include: "Rules/Reference_creation.smk"
-include: "Rules/Reference_update.smk"
 include: "Rules/Blasting.smk"
 include: "Rules/Mapping.smk"
 include: "Rules/Analysis.smk"
 
-
-# if bowtie
+# -- define rule all, or essentially the output goal of this pipeline.
 rule all:
     input:
-        #unAssembled_1=expand("{path}/output_denovo/all.joined.fastq.gz",  path=config["output_dir"]),
-        #merged_Assembled=expand("{path}/output_denovo/all.merged.fastq.gz",  path=config["output_dir"]),
-        #log=expand("{path}/mapping/mapping_variantcalling.log",path=config["output_dir"]),
-        #ref=expand("{path}/output_blast/Eukaryota_ref.fa",path=config["output_dir"]),
-        #blast_file=expand("{path}/output_blast/outputblast_kingdoms.tsv",path=config["output_dir"]),
-        #statscsv=expand("{path}/stats/stats.csv",path=config["output_dir"], sample=SAMPLES),
-        #bamOut=expand("{path}/mapping/mapping_{sample}.bam",path=config["output_dir"], sample=SAMPLES),
-        #demulti_R1=expand("{path}/Preprocessing/demultiplexed_R1.fq.gz",  path=config["output_dir"]),
-        #demulti_R2=expand("{path}/Preprocessing/demultiplexed_R2.fq.gz",  path=config["output_dir"]),
-        #R1_sample_demulti=expand("{path}/Preprocessing/monos/{sample}.demultiplexed_R1.fq.gz",  path=config["output_dir"],sample=MONOS),
-        #R2_sample_demulti=expand("{path}/Preprocessing/monos/{sample}.demultiplexed_R2.fq.gz",  path=config["output_dir"],sample=MONOS)
-        #bamOut=temp(expand("{path}/mapping/mapping_sq.bam",path=config["output_dir"]))
-        #bamOut=expand("{path}/mapping/mapping_sq_{sample}.bam",path=config["output_dir"], sample=SAMPLES)
-        Data1=expand("{path}/stats/Data_1_Clusters_Target_vs_Reason_to_remove_8_15_1000_summed_per_species.txt", path=config["output_dir"]),
-        Data2=expand("{path}/stats/Data_2_Clusters_filtered_due_to_homology_to_8_15_1000.txt", path=config["output_dir"]),
-        Data3=expand("{path}/stats/Data_3_READ_COUNT_removed_CLUSTERS_SUM_8_15_1000.csv", path=config["output_dir"]),
-        Data4=expand("{path}/stats/Data_4_SUM_8_15_1000.csv", path=config["output_dir"]),
-        Data5=expand("{path}/stats/Data_5_SUM_MINREAD_FILTER_8_15_1000.csv", path=config["output_dir"])
-
-"""
-if star
-rule all:
-    input:
-        unAssembled_1=expand("{path}/output_denovo/all.joined.fastq.gz",  path=config["output_dir"]),
-        merged_Assembled=expand("{path}/output_denovo/all.merged.fastq.gz",  path=config["output_dir"]),
-        ref=expand("{path}/output_blast/Eukaryota_ref.fa",path=config["output_dir"]),
-        log=expand("{path}/mapping/mapping_variantcalling.log",path=config["output_dir"]),
-        blast_file=expand("{path}/output_blast/outputblast_kingdoms.tsv",path=config["output_dir"]),
-        statscsv=expand("{path}/stats/stats.csv",path=config["output_dir"]),
-        bamOut=expand("{path}/mapping/out.bam",path=config["output_dir"]),
-        demulti_R1=expand("{path}/Preprocessing/demultiplexed_R1.fq.gz",  path=config["output_dir"]),
-        demulti_R2=expand("{path}/Preprocessing/demultiplexed_R2.fq.gz",  path=config["output_dir"]),
-        R1_sample_demulti=expand("{path}/Preprocessing/monos/{sample}.demultiplexed_R1.fq.gz",  path=config["output_dir"],sample=MONOS),
-        R2_sample_demulti=expand("{path}/Preprocessing/monos/{sample}.demultiplexed_R2.fq.gz",  path=config["output_dir"],sample=MONOS)
-"""
+        allpreprocessed=expand("{allpreprocessed_dir}/preprocessed_R{readfile}.fq.gz",  allpreprocessed_dir=config["allpreprocessed_dir"], readfile=readfile),
+        bamOut=expand("{bam_dir}/{mapper}/mapping_rg_{sample}.bam",bam_dir=config["bam_dir"], mapper=MAPPER, sample=SAMPLES),
+        bamMerged=expand("{analysis_out}/{mapper}/mapping_merged.bam",analysis_out=config["analysis_out"], mapper=MAPPER),
+        statscsv=expand("{analysis_out}/{mapper}/stats.csv",analysis_out=config["analysis_out"], mapper=MAPPER),
+        Data1=expand("{analysis_out}/{mapper}/Data_1_Clusters_Target_vs_Reason_to_remove_8_15_1000_summed_per_species.txt", analysis_out=config["analysis_out"], mapper=MAPPER),
+        Data2=expand("{analysis_out}/{mapper}/Data_2_Clusters_filtered_due_to_homology_to_8_15_1000.txt", analysis_out=config["analysis_out"], mapper=MAPPER),
+        Data3=expand("{analysis_out}/{mapper}/Data_3_READ_COUNT_removed_CLUSTERS_SUM_8_15_1000.csv", analysis_out=config["analysis_out"], mapper=MAPPER),
+        Data4=expand("{analysis_out}/{mapper}/Data_4_SUM_8_15_1000.csv", analysis_out=config["analysis_out"], mapper=MAPPER),
+        Data5=expand("{analysis_out}/{mapper}/Data_5_SUM_MINREAD_FILTER_8_15_1000.csv", analysis_out=config["analysis_out"], mapper=MAPPER),
+        alllogs=expand("{logsummary_dir}/multiQClogsummary.html", logsummary_dir=config["logsummary_dir"])

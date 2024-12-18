@@ -1,34 +1,146 @@
-#rule blast:
-#    input:
-#        ref=expand("{path}/output_denovo/ref.fa",path=config["output_dir"])
-#    output:
-#        blast_file=expand("{path}/output_blast/outputblast_kingdoms.tsv",path=config["output_dir"])
-#    params:
-#        blastDB=config["blastDB"]
-#    threads:40
-#    conda: "../Envs/blast.yaml"
-#    shell:
-#        """
-#        blastn -query {input.ref} -db {params.blastDB}/nt -out {output.blast_file} \
-#        -num_alignments 1 -num_threads {threads} \
-#        -outfmt '6 qseqid sseqid pident evalue bitscore sskingdom sscinames length sstart send'
-#        """
+# Authors v1.0 (Legacy):    ..., ..., ... & ...
+# Authors v2.0 (New):       Jelle van der Heide
+# Date:                     ../../..
+# 
+# Considering the chance the reference is at this point still potentially contaminated with non-eukaryotic 
+# DNA, the de-novo reference reads are to be blasted against the NR/NT database. The rules defined below
+# execute said blast, as well as analyse it's results, filtering out unwanted reads (non-eukaryotic) accordingly.
+# Besides filtering, these rules generate a number of files, which offer insight into the degree of contamination
+# and what data the filtering was based upon.
+# --------------------------------------------------------------------------------------------------------------------
 
 
 
-rule blastref:
+# This rule handles blasting the reference reads against the NR/NT database. At the moment this is fully executed
+# locally, which means the database could become outdated. Be sure to check with the system moderator whether the correct
+# version of the database is being used. From the BLAST-results, the following columns are saved:
+#       *   6 
+#       *   qseqid      the query sequence id
+#       *   sseqid      the target sequence id
+#       *   pident      the percentage of positions that were identical
+#       *   evalue      the expect value for the hit
+#       *   bitscore    the bitscore for the hit
+#       *   sskingdom   the super kingdom of the hit organism of origin
+#       *   sscinames   the scientific name of the hit organism of origin
+#       *   length      the length of the alignment
+#       *   sstart      the start of the aignment within the subject
+#       *   send        the end of the alignment within the subject
+# -----     
+# Input:    - A de-novo assembled meta-reference file.
+# Output:   - The results from the BLAST query, in .tsv format
+"""
+rule blast:
+    params:
+        blastDB=config["blastDB"]
     input:
-        ref=expand("{path}/output_denovo/ref.fa",path=config["output_dir"]),
-        blast_file=expand("{path}/output_blast/outputblast_kingdoms.tsv",path=config["output_dir"]),
-        genus_lists=expand("{sup_dir}/{path}", path=config["genus"], sup_dir=config["sup_dir"])
+        ref=expand("{ref_dir}/ref.fa", ref_dir=config["ref_dir"])
     output:
-        refBlasted=expand("{path}/output_blast/Eukaryota_ref.fa",path=config["output_dir"]),
-        stats=expand("{path}/output_blast/blastStatistics.txt", path=config["output_dir"])
+        blastresults=expand("{blasting_out}/blastresults.tsv", blasting_out=config["blasting_out"])
+    log: 
+        "../Logs/Blasting/blast.log"
+    benchmark: 
+        "../Benchmarks/blast.benchmark.tsv"
+    conda: 
+        "../Envs/blast.yaml"
+    threads: 
+        32
+    shell:
+        """""""
+        export BLASTDB={params.blastDB}
+        blastn \
+            -query {input.ref} \
+            -db {params.blastDB}/nt \
+            -out {output.blastresults} \
+            -num_alignments 1 \
+            -num_threads {threads} \
+            -outfmt '6 qseqid sseqid pident evalue bitscore sskingdom sscinames length sstart send' \
+            2> {log}
+        """
+
+# While this rule may seem a bit large at first, what it does really isn't all that impressive. In short, this rule parses the
+# BLAST-result file and extracts data of interest. The main focus here lies on filtering non-eukaryotic reads from the reference.
+# Reads that belong to other kingdoms are saved in separate ref files, as well as their scientific names and headers (both also separate). 
+# Lastly, an overview is generated for the number of reads that have been assigned to which super kingdom.
+# -----     
+# Input:    - The de-novo assembled meta-reference read-file.
+#           - The BLAST-result file.
+#           - The list of known genusses, which has potentially been generated in a prior run.
+# Output:   - Files that contain the names found within the hits of the BLAST results that belong to a specific super kingdom.
+#           - Files that contain the headers of above mentioned hits for a specific super kingdom.
+#           - Files that contain the filtered meta-reference for a specific super kingdom.
+#           - The statistics of the blast query, specifically how many reads were assigned to which super kingdom.
+rule blastref:
     params:
         outputDir=expand("{path}/output_blast/", path=config["output_dir"])
-    threads: 10
+    input:
+        ref=expand("{ref_dir}/ref.fa", ref_dir=config["ref_dir"]),
+        blastresults=expand("{blasting_out}/blastresults.tsv", blasting_out=config["blasting_out"]),
+        genus_lists=expand("{sup_dir}/{genus}", sup_dir=config["sup_dir"], genus=config["genus"])
+    output:
+        bryophyta_names=expand("{blasting_out}/Bryophyta_names.txt", blasting_out=config["blasting_out"]),
+        eukaryota_names=expand("{blasting_out}/Eukaryota_names.txt", blasting_out=config["blasting_out"]),
+        imperia_names=expand("{blasting_out}/Imperia_names.txt", blasting_out=config["blasting_out"]),
+        fungi_names=expand("{blasting_out}/Fungi_names.txt", blasting_out=config["blasting_out"]),
+        arbuscular_names=expand("{blasting_out}/Arbuscular_names.txt", blasting_out=config["blasting_out"]),
+        gymnospermae_names=expand("{blasting_out}/Gymnospermae_names.txt", blasting_out=config["blasting_out"]),
+        pteridophyta_names=expand("{blasting_out}/Pteridophyta_names.txt", blasting_out=config["blasting_out"]),
+        angiospermae_names=expand("{blasting_out}/Angiospermae_names.txt", blasting_out=config["blasting_out"]),
+        archaea_names=expand("{blasting_out}/Archaea_names.txt", blasting_out=config["blasting_out"]),
+        bacteria_names=expand("{blasting_out}/Bacteria_names.txt", blasting_out=config["blasting_out"]),
+        bryophyta=expand("{blasting_out}/Bryophyta.txt", blasting_out=config["blasting_out"]),
+        eukaryota=expand("{blasting_out}/Eukaryota.txt", blasting_out=config["blasting_out"]),
+        imperia=expand("{blasting_out}/Imperia.txt", blasting_out=config["blasting_out"]),
+        fungi=expand("{blasting_out}/Fungi.txt", blasting_out=config["blasting_out"]),
+        arbuscular=expand("{blasting_out}/Arbuscular.txt", blasting_out=config["blasting_out"]),
+        gymnospermae=expand("{blasting_out}/Gymnospermae.txt", blasting_out=config["blasting_out"]),
+        pteridophyta=expand("{blasting_out}/Pteridophyta.txt", blasting_out=config["blasting_out"]),
+        angiospermae=expand("{blasting_out}/Angiospermae.txt", blasting_out=config["blasting_out"]),
+        archaea=expand("{blasting_out}/Archaea.txt", blasting_out=config["blasting_out"]),
+        bacteria=expand("{blasting_out}/Bacteria.txt", blasting_out=config["blasting_out"]),
+        eukaryota_ref=expand("{blasting_out}/Eukaryota_ref.fa", blasting_out=config["blasting_out"]),
+        imperia_ref=expand("{blasting_out}/Imperia_ref.fa", blasting_out=config["blasting_out"]),
+        fungi_ref=expand("{blasting_out}/Fungi_ref.fa", blasting_out=config["blasting_out"]),
+        arbuscular_ref=expand("{blasting_out}/Arbuscular_ref.fa", blasting_out=config["blasting_out"]),
+        angiospermae_ref=expand("{blasting_out}/Angiospermae_ref.fa", blasting_out=config["blasting_out"]),
+        archaea_ref=expand("{blasting_out}/Archaea_ref.fa", blasting_out=config["blasting_out"]),
+        bacteria_ref=expand("{blasting_out}/Bacteria_ref.fa", blasting_out=config["blasting_out"]),
+        stats=expand("{blasting_out}/blastStatistics.txt", blasting_out=config["blasting_out"])
+    #log: NULL
+    benchmark:
+        "../Benchmarks/blastref.benchmark.tsv"
+    #conda NULL
+    threads: 
+        32
     shell:      
         """
+        touch {output.bryophyta_names}
+        touch {output.eukaryota_names}
+        touch {output.imperia_names}
+        touch {output.fungi_names}
+        touch {output.arbuscular_names}
+        touch {output.gymnospermae_names}
+        touch {output.pteridophyta_names}
+        touch {output.angiospermae_names}
+        touch {output.archaea_names}
+        touch {output.bacteria_names}
+        touch {output.bryophyta}
+        touch {output.eukaryota}
+        touch {output.imperia}
+        touch {output.fungi}
+        touch {output.arbuscular}
+        touch {output.gymnospermae}
+        touch {output.pteridophyta}
+        touch {output.angiospermae}
+        touch {output.archaea}
+        touch {output.bacteria}
+        touch {output.eukaryota_ref}
+        touch {output.imperia_ref}
+        touch {output.fungi_ref}
+        touch {output.arbuscular_ref}
+        touch {output.angiospermae_ref}
+        touch {output.archaea_ref}
+        touch {output.bacteria_ref}
+
         Bryophyta=()            #Mosses and worts
         Eukaryota=()            #Eukaryota
         Imperia=()              #Viruses
@@ -103,25 +215,25 @@ rule blastref:
             Bacteria)  
                 if [ "$add" = true ]; then
                     Bacteria_contigs+=("$contig")
-                    echo "$fullname" >>  {params.outputDir}Bacteria_names.txt  
+                    echo "$fullname" >>  {output.bacteria_names} 
                 fi
                 ;;
             Archaea)
                 if [ "$add" = true ]; then
                     Archaea_contigs+=("$contig")
-                    echo "$fullname" >>  {params.outputDir}Archaea_names.txt  
+                    echo "$fullname" >>  {output.archaea_names} 
                 fi
                 ;;    
             Viruses)
                 if [ "$add" = true ]; then
                     Imperia_contigs+=("$contig")
-                    echo "$fullname" >>  {params.outputDir}Imperia_names.txt  
+                    echo "$fullname" >>  {output.imperia_names}
                 fi
                 ;;    
             N/A)
                 if [ "$add" = true ]; then
                     Eukaryota_contigs+=("$contig")
-                    echo "$fullname" >>  {params.outputDir}Eukaryota_names.txt  
+                    echo "$fullname" >>  {output.eukaryota_names}
                 fi
                 ;;
             Eukaryota)
@@ -130,38 +242,38 @@ rule blastref:
                 sub_genera="${{genera[@]:0:2}}" 
                 if [[ ${{Eukaryota[@]}} =~ $main_genera ]] && [ "$add" = true ]; then
                     Eukaryota_contigs+=("$contig")
-                    echo "$fullname" >>  {params.outputDir}Eukaryota_names.txt  
+                    echo "$fullname" >>  {output.eukaryota_names}
                 fi
                 if [[ ${{Arbuscular[@]}} =~ $main_genera ]] && [ "$add" = true ]; then
                     Arbuscular_contigs+=("$contig")
                     Fungi_contigs+=("$contig")
-                    echo "$sub_genera" >> {params.outputDir}Arbuscular_names.txt  
-                    echo "$sub_genera" >> {params.outputDir}Fungi_names.txt  
+                    echo "$sub_genera" >> {output.arbuscular_names}
+                    echo "$sub_genera" >> {output.fungi_names} 
                 elif [[ ${{Fungi[@]}} =~ $main_genera ]] && [ "$add" = true ]; then
                     Fungi_contigs+=("$contig")
-                    echo "$sub_genera" >> {params.outputDir}Fungi_names.txt  
+                    echo "$sub_genera" >> {output.fungi_names}
                 elif [[ ${{Angiospermae[@]}} =~ $main_genera ]] && [ "$add" = true ]; then
                     Angiospermae_contigs+=("$contig")
-                    echo "$fullname" >> {params.outputDir}Angiospermae_names.txt  
+                    echo "$fullname" >> {output.angiospermae_names}
                 elif [[ ${{Bryophyta[@]}} =~ $main_genera ]] && [ "$add" = true ]; then
                     Bryophyta_contigs+=("$contig")
-                    echo "$fullname" >> {params.outputDir}Bryophyta_names.txt 
+                    echo "$fullname" >> {output.bryophyta_names}
                 elif [[ ${{Gymnospermae[@]}} =~ $main_genera ]] && [ "$add" = true ]; then
                     Gymnospermae_contigs+=("$contig")
-                    echo "$fullname" >> {params.outputDir}Gymnospermae_names.txt 
+                    echo "$fullname" >> {output.gymnospermae_names}
                 elif [[ ${{Pteridophyta[@]}} =~ $main_genera ]] && [ "$add" = true ]; then
                     Pteridophyta_contigs+=("$contig")
-                    echo "$fullname" >> {params.outputDir}Pteridophyta_names.txt 
+                    echo "$fullname" >> {output.pteridophyta_names}
                 fi
                 ;;
             *) 
                 if [ "$add" = true ]; then
                     Eukaryota_contigs+=("$contig")
-                    echo "$fullname" >>  {params.outputDir}Eukaryota_names.txt  
+                    echo "$fullname" >>  {output.eukaryota_names}
                 fi
                 ;;
         esac
-        done < {input.blast_file}
+        done < {input.blastresults}
 
         echo "\tBryophyta:\t\t" "${{#Bryophyta_contigs[@]}}" >> {output.stats}
         echo "\tEukaryota:\t\t" "${{#Eukaryota_contigs[@]}}"  >> {output.stats}
@@ -176,43 +288,43 @@ rule blastref:
 
         for line in ${{Bryophyta_contigs[@]}}
         do
-            echo "$line" >> {params.outputDir}Bryophyta.txt
+            echo "$line" >> {output.bryophyta}
         done
         for line in ${{Eukaryota_contigs[@]}}
         do
-            echo "$line" >> {params.outputDir}Eukaryota.txt
+            echo "$line" >> {output.eukaryota}
         done
         for line in ${{Imperia_contigs[@]}}
         do
-            echo "$line" >> {params.outputDir}Imperia.txt
+            echo "$line" >> {output.imperia}
         done
         for line in ${{Fungi_contigs[@]}}
         do
-            echo "$line" >> {params.outputDir}Fungi.txt
+            echo "$line" >> {output.fungi}
         done
         for line in ${{Arbuscular_contigs[@]}}
         do
-            echo "$line" >> {params.outputDir}Arbuscular.txt
+            echo "$line" >> {output.arbuscular}
         done
         for line in ${{Gymnospermae_contigs[@]}}
         do
-            echo "$line" >> {params.outputDir}Gymnospermae.txt
+            echo "$line" >> {output.gymnospermae}
         done
         for line in ${{Pteridophyta_contigs[@]}}
         do
-            echo "$line" >> {params.outputDir}Pteridophyta.txt
+            echo "$line" >> {output.pteridophyta}
         done
         for line in ${{Angiospermae_contigs[@]}}
         do
-            echo "$line" >> {params.outputDir}Angiospermae.txt
+            echo "$line" >> {output.angiospermae}
         done  
         for line in ${{Archaea_contigs[@]}}
         do
-            echo "$line" >> {params.outputDir}Archaea.txt
+            echo "$line" >> {output.archaea}
         done
         for line in ${{Bacteria_contigs[@]}}
         do
-            echo "$line" >> {params.outputDir}Bacteria.txt
+            echo "$line" >> {output.bacteria}
         done        
 
         echo "-----------------------------------------" >> {output.stats}
@@ -223,66 +335,66 @@ rule blastref:
             if [[ $line == \>* ]]; then
                 #line="${{line:1}}"    # deze line moet er uit om bowtie te kunnen runnen
                 if [[ ${{Angiospermae_contigs[@]}} =~ $line ]]; then
-                    echo "$line" >>  {params.outputDir}Angiospermae_ref.fa
+                    echo "$line" >>  {output.angiospermae_ref}
                     Angiospermae_contigs=( "${{Angiospermae_contigs[@]/$line}}" )
-                    echo "$line" >>  {params.outputDir}Eukaryota_ref.fa  
+                    echo "$line" >>  {output.eukaryota_ref} 
                     Eukaryota_contigs=( "${{Eukaryota_contigs[@]/$line}}" )
                     switchcase="ANGIOSPERMAE"
                 elif [[ ${{Eukaryota_contigs[@]}} =~ $line ]]; then
-                    echo "$line" >>  {params.outputDir}Eukaryota_ref.fa
+                    echo "$line" >>  {output.eukaryota_ref}
                     Eukaryota_contigs=( "${{Eukaryota_contigs[@]/$line}}" )
                     switchcase="EUKARYOTA"
                 elif [[ ${{Bacteria_contigs[@]}} =~ $line ]]; then
-                    echo "$line" >>  {params.outputDir}Bacteria_ref.fa  
+                    echo "$line" >>  {output.bacteria_ref} 
                     Bacteria_contigs=( "${{Bacteria_contigs[@]/$line}}" )
                     switchcase="BACTERIA"
                 elif [[ ${{Arbuscular_contigs[@]}} =~ $line ]]; then
-                    echo "$line" >>  {params.outputDir}Arbuscular_ref.fa  
+                    echo "$line" >>  {output.arbuscular_ref}
                     Arbuscular_contigs=( "${{Arbuscular_contigs[@]/$line}}" )
                     switchcase="ARBUSCULAR"
                 elif [[ ${{Fungi_contigs[@]}} =~ $line ]]; then
-                    echo "$line" >>  {params.outputDir}Fungi_ref.fa  
+                    echo "$line" >>  {output.fungi_ref}
                     Fungi_contigs=( "${{Fungi_contigs[@]/$line}}" )
                     switchcase="FUNGI"
                 elif [[ ${{Archaea_contigs[@]}} =~ $line ]]; then
-                    echo "$line" >>  {params.outputDir}Archaea_ref.fa  
+                    echo "$line" >>  {output.archaea_ref}
                     Archaea_contigs=( "${{Archaea_contigs[@]/$line}}" )
                     switchcase="ARCHAEA"
                 elif [[ ${{Imperia_contigs[@]}} =~ $line ]]; then
-                    echo "$line" >>  {params.outputDir}Imperia_ref.fa  
+                    echo "$line" >>  {output.imperia_ref} 
                     Imperia_contigs=( "${{Imperia_contigs[@]/$line}}" )
                     switchcase="IMPERIA"
                 else
-                    echo "$line" >>  {params.outputDir}Eukaryota_ref.fa    
+                    echo "$line" >>  {output.eukaryota_ref}
                     Eukaryota_contigs=( "${{Eukaryota_contigs[@]/$line}}" )
                     switchcase="EUKARYOTA"
                 fi
             else 
                 case $switchcase in
                     ANGIOSPERMAE)
-                        echo "$line" >>  {params.outputDir}Angiospermae_ref.fa
-                        echo "$line" >>  {params.outputDir}Eukaryota_ref.fa  
+                        echo "$line" >>  {output.angiospermae_ref}
+                        echo "$line" >>  {output.eukaryota_ref}  
                         ;;
                     EUKARYOTA)
-                        echo "$line" >>  {params.outputDir}Eukaryota_ref.fa
+                        echo "$line" >>  {output.eukaryota_ref}
                         ;;
                     BACTERIA) 
-                        echo "$line" >>  {params.outputDir}Bacteria_ref.fa  
+                        echo "$line" >>  {output.bacteria_ref} 
                         ;;
                     ARBUSCULAR)
-                        echo "$line" >>  {params.outputDir}Arbuscular_ref.fa  
+                        echo "$line" >>  {output.arbuscular_ref}
                         ;;
                     FUNGI)
-                        echo "$line" >>  {params.outputDir}Fungi_ref.fa  
+                        echo "$line" >>  {output.fungi_ref} 
                         ;;
                     ARCHAEA)
-                        echo "$line" >>  {params.outputDir}Archaea_ref.fa  
+                        echo "$line" >>  {output.archaea_ref}
                         ;;
                     IMPERIA)
-                        echo "$line" >>  {params.outputDir}Imperia_ref.fa  
+                        echo "$line" >>  {output.imperia_ref} 
                         ;;
                     *)
-                        echo "$line" >>  {params.outputDir}Eukaryota_ref.fa
+                        echo "$line" >>  {output.eukaryota_ref}
                         ;;
                 esac
             fi

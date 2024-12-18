@@ -1,43 +1,87 @@
+# Authors v1.0 (Legacy):    ..., ..., ... & ...
+# Authors v2.0 (New):       Jelle van der Heide
+# Date:                     ../../..
+# 
+# To be able to determine the species of origin for the sample reads, reference sequences are required. However, as the majority of 
+# refseqs for the target species are inadequate and much longer than needed the pipeline agenerates all de-novo from
+# the mono samples. As for each mono there are two read files, they need to be merged or joined, depending on whether there is
+# overlap between the reads. All mono reference is then merged into one large meta-reference file. 
+# --------------------------------------------------------------------------------------------------------------------
 
-# merget mono readparen als dit mogelijk is. wat niet kan worden gemerget komt in joined_1 en 2
-rule merge_mono:
+
+
+# This rule merges paired mono-sample reads when there is enough overlap between them to do so. Reads that cannot be merged
+# are placed in a different file within which they will end up being joined together instead.
+# -----     
+# Input:    - The preprocessed read files for one of the monos.
+# Output:   - The unmerged reads from the preprocessed read files from one of the monos.
+#           - The merged reads from the preprocessed read files from one of the monos.
+rule merge_monos:
     params:
         sample='{sample}',
-        inputdir=expand("{path}/Preprocessing/monos",  path=config["output_dir"]),
-        outputdir=expand("{path}/output_denovo/",  path=config["output_dir"]),
-        preprosup=expand("{preprosup}", preprosup=config["sup_dir"])
+        supplement=expand("{supplement}", supplement=config["sup_dir"]),
+        outputprefix=expand("{joinedmono_dir}/{{sample}}.notmerged",  joinedmono_dir=config["joinedmono_dir"])
     input:
-        R1_in=expand("{path}/Preprocessing/monos/{sample}.demultiplexed_R1.fq.gz",  path=config["output_dir"],sample=MONOS),
-        R2_in=expand("{path}/Preprocessing/monos/{sample}.demultiplexed_R2.fq.gz",  path=config["output_dir"],sample=MONOS)
+        R1=expand("{mono_dir}/{{sample}}.1.fq.gz",  mono_dir=config["mono_dir"]),
+        R2=expand("{mono_dir}/{{sample}}.2.fq.gz",  mono_dir=config["mono_dir"])
     output:
-        unAssembled_1=(expand("{path}/output_denovo/monos/{{sample}}.joined_1.fastq.gz",  path=config["output_dir"])),
-        unAssembled_2=(expand("{path}/output_denovo/monos/{{sample}}.joined_2.fastq.gz",  path=config["output_dir"])),
-        merged_Assembled=(expand("{path}/output_denovo/monos/{{sample}}.merged.fastq.gz",  path=config["output_dir"]))
-    threads: 1
-    log: "../Logs/Reference_creation/merge_mono_{sample}.log"
-    conda: "../Envs/merge_reads.yaml"
+        notmergedR1=temp(expand("{joinedmono_dir}/{{sample}}.notmerged_1.fastq.gz",  joinedmono_dir=config["joinedmono_dir"])),
+        notmergedR2=temp(expand("{joinedmono_dir}/{{sample}}.notmerged_2.fastq.gz",  joinedmono_dir=config["joinedmono_dir"])),
+        merged=temp(expand("{mergedmono_dir}/{{sample}}.merged.fastq.gz",  mergedmono_dir=config["mergedmono_dir"]))
+    log: 
+        "../Logs/Reference_creation/merge_monos_{sample}.log"
+    benchmark:
+        "../Benchmarks/merge_monos_{sample}.benchmark.tsv"
+    conda: 
+        "../Envs/merge_reads.yaml"
+    threads: 
+        4
     shell:
-        "NGmerge -1 {params.inputdir}/{params.sample}.demultiplexed_R1.fq.gz "
-        "-2 {params.inputdir}/{params.sample}.demultiplexed_R2.fq.gz "
-        "-o {params.outputdir}/monos/{params.sample}.merged.fastq.gz -n {threads} "
-        "-f {params.outputdir}/monos/{params.sample}.joined "
-        "-w {params.preprosup}/qual_profile.txt -q 33 -u 41 -z -g 2> {log}"
+        """
+        NGmerge \
+            -1 {input.R1} \
+            -2 {input.R2} \
+            -o {output.merged} \
+            -n {threads} \
+            -f {params.outputprefix} \
+            -w {params.supplement}/qual_profile.txt \
+            -q 33 \
+            -u 41 \
+            -z \
+            -g \
+            2> {log}
+        """
+        
 
-
-#joint de overgebleven readparen. dit komt in een volledig joined.fastq.gz bestand per mono
-rule combine_joined:
+# This rule joins together paired mono-sample reads when they could not be merged because of a lack of overlap between them. When 
+# reads are joined together, eight 'N' characters are placed in between them, so them being in separate to an unknown extent is clear
+# when mapping on these reads later on. To properly be able to join, some calculations must be made over information found in the barcode-file,
+# as well as the number of cycles that have occurred during PCR.
+# -----     
+# Input:    - The unmerged reads from a mono-sample readfile.
+#           - The barcode file for this run.
+# Output:   - The joined reads from a mono-sample readfile.
+rule join_monos:
     params:
         sample='{sample}',
-        inputdir=expand("{path}/output_denovo/monos",  path=config["output_dir"]),
-        cycles=getParam_cycle(param_cycle)
+        barcode_R1=config["barcode_R1"],
+        barcode_R2=config["barcode_R2"],
+        wobble_R1=config["wobble_R1"],
+        wobble_R2=config["wobble_R2"],
+        cycles=config["pcr_cycles"]
     input:
-        unAssembled_1=expand("{path}/output_denovo/monos/{sample}.joined_1.fastq.gz",path=config["output_dir"],sample=MONOS),
-        unAssembled_2=expand("{path}/output_denovo/monos/{sample}.joined_2.fastq.gz",path=config["output_dir"],sample=MONOS),
-        barcodes=expand("{path}/{bar}", path=config["input_dir"], bar=config["barcode_file"])
-    #log:
+        notmergedR1=expand("{joinedmono_dir}/{{sample}}.notmerged_1.fastq.gz",  joinedmono_dir=config["joinedmono_dir"]),
+        notmergedR2=expand("{joinedmono_dir}/{{sample}}.notmerged_2.fastq.gz",  joinedmono_dir=config["joinedmono_dir"]),
+        barcodes=expand("{input_dir}/{barcodes}", input_dir=config["input_dir"], barcodes=config["barcode_file"])
     output:
-        joined_combined=(expand("{path}/output_denovo/monos/{{sample}}.joined.fastq.gz",  path=config["output_dir"]))
-    conda: "../Envs/combine_reads.yaml"
+        joined=temp(expand("{joinedmono_dir}/{{sample}}.joined.fastq.gz",  joinedmono_dir=config["joinedmono_dir"]))
+    #log: NULL
+    benchmark:
+        "../Benchmarks/join_monos_{sample}.benchmark.tsv"
+    conda: 
+        "../Envs/combine_reads.yaml"
+    threads:
+        1
     shell:
         """
         header=$(awk 'NR==1 {{print; exit}}' {input.barcodes})
@@ -45,16 +89,16 @@ rule combine_joined:
         set +u
         for ((i=1; i<=${{#headerList[@]}}; i++)); do
             case "${{headerList[$i]}}" in
-                Barcode_R1)
+                {params.barcode_R1})
                     BR1i="$i"
                     ;;
-                Barcode_R2)
+                {params.barcode_R2})
                     BR2i="$i"
                     ;;
-                Wobble_R1)
+                {params.wobble_R1})
                     WR1i="$i"
                     ;;
-                Wobble_R2)
+                {params.wobble_R2})
                     WR2i="$i"
                     ;;
             esac
@@ -84,158 +128,233 @@ rule combine_joined:
             done
         }} < {input.barcodes}
 
-        maxR1=$((cycles - BR1MaxLen - WR1Max))
-        maxR2=$((cycles - BR2MaxLen - WR2Max))
-        paste <(seqtk seq {input.unAssembled_1} | cut -c1-141) <(seqtk seq -r {input.unAssembled_2} | cut -c1-141 | seqtk seq -r -) | cut -f1-5 | sed $'/^@/!s/\t/NNNNNNNN/g' | sed s/+NNNNNNNN+/+/g | sed $'s/ /\t/' | cut -f1,2 | pigz -p 1 -c > {output.joined_combined}
-        """ # dit is een deel dezelfde code als barcode zooi in de prepro 
-        # maxbc len kan in snakefile. bash kan dit niet blijkbaar
+        maxR1=$(({params.cycles} - BR1MaxLen - WR1Max))
+        maxR2=$(({params.cycles} - BR2MaxLen - WR2Max))
+        paste <(seqtk seq {input.notmergedR1} | cut -c1-141) <(seqtk seq -r {input.notmergedR2} | cut -c1-141 | seqtk seq -r -) | 
+        cut -f1-5 | 
+        sed $'/^@/!s/\t/NNNNNNNN/g' | 
+        sed s/+NNNNNNNN+/+/g | 
+        sed $'s/ /\t/' | 
+        cut -f1,2 | 
+        pigz -p 1 -c > {output.joined}
+        """
 
-# plak de merged en joined reads per mono aan elkaar in een bestand
+# To be able to process the mono read-files, this rule combines the merged and joined reads into a single file for each mono.
+# -----     
+# Input:    - The joined reads for one of the monos.
+#           - The merged reads for one of the monos.
+# Output:   - A read file that contains all joined and merged reads for one of the monos.
 rule cat_monos:
     params:
-        sample='{sample}',
-        inputdir=expand("{path}/output_denovo/monos",  path=config["output_dir"])
+        sample='{sample}'
     input:
-        joined_combined=expand("{path}/output_denovo/monos/{{sample}}.joined.fastq.gz",  path=config["output_dir"]),
-        merged_Assembled=expand("{path}/output_denovo/monos/{{sample}}.merged.fastq.gz",  path=config["output_dir"])
+        merged=expand("{mergedmono_dir}/{{sample}}.merged.fastq.gz",  mergedmono_dir=config["mergedmono_dir"]),
+        joined=expand("{joinedmono_dir}/{{sample}}.joined.fastq.gz",  joinedmono_dir=config["joinedmono_dir"])
     output:
-        monoFA=(expand("{path}/output_denovo/monos/{{sample}}.combined.fastq.gz",  path=config["output_dir"]))
+        combined=temp(expand("{joinedmono_dir}/{{sample}}.combined.fastq.gz",  joinedmono_dir=config["joinedmono_dir"]))
+    #log: NULL
+    benchmark:
+        "../Benchmarks/join_monos_{sample}.benchmark.tsv"
+    #conda: NULL
+    threads:
+        1
     shell:
         """
-        cat {input.joined_combined} {input.merged_Assembled} > {params.inputdir}/{params.sample}.combined.fastq.gz
+        cat {input.joined} {input.merged} > {output.combined}
         """
 
-rule sort:
+# To prepare the reads for dereplication, they have to be sorted by length.
+# -----     
+# Input:    - The combined mono-reads.
+# Output:   - A sorted version of the combined mono-reads.
+rule sort_monos:
+    params:
+        sample='{sample}'
+    input:
+        combined=expand("{joinedmono_dir}/{{sample}}.combined.fastq.gz",  joinedmono_dir=config["joinedmono_dir"])
+    output:
+        sorted=temp(expand("{sortedmono_dir}/{{sample}}.sorted.fa",  sortedmono_dir=config["sortedmono_dir"]))
+    log: 
+        "../Logs/Reference_creation/sort_monos_{sample}.log"
+    benchmark:
+        "../Benchmarks/sort_monos_{sample}.benchmark.tsv"
+    conda: 
+        "../Envs/sort.yaml"
+    threads:
+        4
+    shell:
+        """
+        vsearch \
+            -sortbylength {input.combined} \
+            --output {output.sorted} \
+            --threads {threads} \
+            2> {log}
+        """
+
+# To clear out any duplicate reads before assembling the reference sequence, this rule dereplicates the
+# reads. To be able to do this properly, it utilizes the sorted reads from the previous rule.
+# -----     
+# Input:    - The sorted mono-read files.
+# Output:   - A dereplicated version of the sorted mono-read-files.
+rule derep_monos:
     params:
         sample='{sample}',
-        inputdir=expand("{path}/output_denovo/monos",  path=config["output_dir"])
+        min_unique_size=config["min_unique_size"]
     input:
-        monoFA=expand("{path}/output_denovo/monos/{{sample}}.combined.fastq.gz",  path=config["output_dir"])
+        sorted=expand("{sortedmono_dir}/{{sample}}.sorted.fa",  sortedmono_dir=config["sortedmono_dir"])
     output:
-        derep=(expand("{path}/output_denovo/monos/{{sample}}.sorted.fa",  path=config["output_dir"])),
-    log: "../Logs/Reference_creation/sort_{sample}.log"
-    conda: "../Envs/sort.yaml"
+        dereplicated=temp(expand("{dereplicated_dir}/{{sample}}.dereplicated.fa",  dereplicated_dir=config["dereplicated_dir"]))
+    log: 
+        "../Logs/Reference_creation/derep_monos_{sample}.log"
+    benchmark:
+        "../Benchmarks/derep_monos_{sample}.benchmark.tsv"
+    conda: 
+        "../Envs/derep_monos.yaml"
+    threads:
+        4
     shell:
         """
-        vsearch -sortbylength {params.inputdir}/{params.sample}.combined.fastq.gz --output {params.inputdir}/{params.sample}.sorted.fa 2> {log}
+        vsearch \
+            -derep_fulllength {input.sorted} \
+            -sizeout \
+            -minuniquesize {params.min_unique_size} \
+            -output {output.dereplicated} \
+            --threads {threads} \
+            2> {log}
         """
 
-
-rule sort_2:
+# To prepare the reads for clustering, they once again have to be sorted by length.
+# -----     
+# Input:    - A dereplicated version of the sorted mono-read-files.
+# Output:   - A sorted version of the dereplicated mono-read files.
+rule resort_monos:
     params:
-        sample='{sample}',
-        inputdir=expand("{path}/output_denovo/monos",  path=config["output_dir"])
+        sample='{sample}'
     input:
-        derep=expand("{path}/output_denovo/monos/{sample}.derep.fa",  path=config["output_dir"],sample=MONOS)
+        dereplicated=expand("{dereplicated_dir}/{{sample}}.dereplicated.fa", dereplicated_dir=config["dereplicated_dir"])
     output:
-        derep=(expand("{path}/output_denovo/monos/{{sample}}.ordered.fa",  path=config["output_dir"]))
-    conda: "../Envs/sort.yaml"
-    log: "../Logs/Reference_creation/sort_2_{sample}.log"
+        sorted=temp(expand("{sortedmono_dir}/{{sample}}.resorted.fa", sortedmono_dir=config["sortedmono_dir"]))
+    log: 
+        "../Logs/Reference_creation/resort_monos_{sample}.log"
+    benchmark:
+        "../Benchmarks/resort_monos_{sample}.benchmark.tsv"
+    conda: 
+        "../Envs/sort.yaml"
+    threads:
+        4
     shell:
-         "vsearch -sortbylength {params.inputdir}/{params.sample}.derep.fa "
-         "--output {params.inputdir}/{params.sample}.ordered.fa 2> {log}"
+        """
+        vsearch \
+            -sortbylength {input.dereplicated} \
+            --output {output.sorted} \
+            --threads {threads} \
+            2> {log}
+        """
 
-rule derep:  #misschien is deze nu overbodig geworden
-    params:
-        sample='{sample}',
-        inputdir=expand("{path}/output_denovo/monos",  path=config["output_dir"]),
-        minSize=getParam_mind(param_mind)
-    input:
-        monoFA=expand("{path}/output_denovo/monos/{sample}.sorted.fa",  path=config["output_dir"],sample=MONOS)
-    output:
-        derep=(expand("{path}/output_denovo/monos/{{sample}}.derep.fa",  path=config["output_dir"]))
-    conda: "../Envs/derep.yaml"
-    log: "../Logs/Reference_creation/derep_{sample}.log"
-    shell:
-         "vsearch -derep_fulllength {params.inputdir}/{params.sample}.sorted.fa "
-         "-sizeout -minuniquesize {params.minSize}  -output {params.inputdir}/{params.sample}.derep.fa 2> {log}"
-
+# In an effort to minimize duplicate reads before creating the de-novo reference, the reads are clustered.
+# this allows the pipeline to omit reads that are too similar, as it is likely they are duplicate and might
+# interfere with the mapping process.
+# -----     
+# Input:    - A sorted version of the dereplicated mono-read files.
+# Output:   - A clustered version of the dereplicated mono-read files.
 rule cluster:
     params:
         sample='{sample}',
-        inputdir=expand("{path}/output_denovo/monos",  path=config["output_dir"]),
-        minSize=getParam_mind(param_mind)
     input:
-        monoFA=expand("{path}/output_denovo/monos/{sample}.ordered.fa",  path=config["output_dir"],sample=MONOS),
+        sorted=expand("{sortedmono_dir}/{{sample}}.resorted.fa", sortedmono_dir=config["sortedmono_dir"])
     output:
-        derep=expand("{path}/output_denovo/monos/{{sample}}.clustered.fa",  path=config["output_dir"])
-    threads: 1
-    conda: "../Envs/cluster.yaml"
-    log: "../Logs/Reference_creation/sluster{sample}.log"
+        clustered=temp(expand("{clustered_dir}/{{sample}}.clustered.fa", clustered_dir=config["clustered_dir"]))
+    log: 
+        "../Logs/Reference_creation/cluster_{sample}.log"
+    benchmark:
+        "../Benchmarks/cluster_{sample}.benchmark.tsv"
+    conda: 
+        "../Envs/cluster.yaml"
+    threads: 
+        4
     shell:
-         "vsearch -cluster_smallmem {params.inputdir}/{params.sample}.ordered.fa -id 0.95 "
-         "-centroids {params.inputdir}/{params.sample}.clustered.fa -sizeout -strand both --threads {threads} 2> {log}"
+         """
+         vsearch \
+            -cluster_smallmem {input.sorted} \
+            -id 0.95 \
+            -centroids {output.clustered} \
+            -sizeout \
+            -strand both \
+            --threads {threads} \
+            2> {log}
+        """
 
+# This rule  adjusts read headers in preparation for assembling the reference sequence in a way that
+# they only contain the origin and an index. Without this edit, the mapping results would be convoluted and 
+# more complex to parse when analyzing it's results.
+# -----     
+# Input:    - A clustered version of the dereplicated mono-read files.
+# Output:   - A clustered version of the dereplicated mono-read files, however here all headers are adjusted to 
+#             contain it's origin and an index.
 rule rename_fast:
     params:
-        sample='{sample}',
-        inputdir=expand("{path}/output_denovo/monos",  path=config["output_dir"]),
-        minSize=getParam_mind(param_mind)
+        sample='{sample}'
     input:
-        monoFA=expand("{path}/output_denovo/monos/{sample}.clustered.fa",  path=config["output_dir"],sample=MONOS),
+        clustered=expand("{clustered_dir}/{{sample}}.clustered.fa", clustered_dir=config["clustered_dir"])
     output:
-        derep=(expand("{path}/output_denovo/monos/{{sample}}.renamed.fa",  path=config["output_dir"]))
+        renamed=temp(expand("{renamedmono_dir}/{{sample}}.renamed.fa", renamedmono_dir=config["renamedmono_dir"]))
+    #log: NULL
+    benchmark:
+        "../Benchmarks/rename_fast_{sample}.benchmark.tsv"
+    #conda: NULL
+    #threads: NULL
     shell: 
         """
-        number=""
-        keep=FALSE
-
-        if [ {params.sample} = "chr" ];
-        then
+        index=0
+        if [ {params.sample} = "chr" ]; then
             genotype={params.sample}
-        elif [ {params.sample} ]; 
-        then
+        elif [ {params.sample} ]; then
             genotype="{params.sample}""_"
         else 
             genotype=""
         fi
-        if [ $number ]; 
-        then
-            index=0
-        elif [ $keep ]; 
-        then
-            index=1
-        fi
         while read line; do
-            #if [[ "$line" =~ ^>.* ]]; then
             if [[ $line == \>* ]]; then
                 index=$((index+1))
-                echo -e ">$genotype$index" >> {params.inputdir}/{params.sample}.renamed.fa
-            elif [[ "$line" =~ ^@.* ]]
-            then
-                if [ !$index ];
-                then
+                echo -e ">$genotype$index" >> {output.renamed}
+            elif [[ "$line" =~ ^@.* ]]; then
+                if [ !$index ]; then
                     index=$((index+1))
-                else 
-                    echo
-                    # splits de regel op '#' en pak hier de 0de positie van
-                    # splits bovenstaande op ':' en pak hier de [1:-1] waarde van
-                    # plak de stukken die hier uit resulteren aan elkaar met een ':' er tussen
                 fi
 
-                if [[ "$line" =~ "^@.*/[12]?\n$" ]];
-                then
+                if [[ "$line" =~ "^@.*/[12]?\n$" ]]; then
                     end=${{line:-2}} 
                 else 
                     end=""
                 fi
-                echo -e "@$genotype$index$end" >> {params.inputdir}/{params.sample}.renamed.fa
-            elif [[ "$line" =~ ^+.* ]]
-            then
-                echo -e "+$genotype$index$end" >> {params.inputdir}/{params.sample}.renamed.fa
+                echo -e "@$genotype$index$end" >> {output.renamed}
+            elif [[ "$line" =~ ^+.* ]]; then
+                echo -e "+$genotype$index$end" >> {output.renamed}
             else
-                echo "$line" >> {params.inputdir}/{params.sample}.renamed.fa
+                echo "$line" >> {output.renamed}
             fi
-        done < {params.inputdir}/{params.sample}.clustered.fa
-        """ # hier is een bepaalde mogelijkheid van de flow nog niet uitgewerkt. de data waar ik mee werk komt hier 
-                #niet toe, maar moet nog wel worden gedaan.
+        done < {input.clustered}
+        """
 
+# With this rule the de-novo meta-refseq is essentially created, as it combines all remaining dereplicated mono-reads
+# into a single meta-reference file. 
+# -----     
+# Input:    - A clustered version of the dereplicated mono-read files, however here all headers are adjusted to 
+#             contain it's origin and an index.
+# Output:   - A de-novo meta reference file containing all dereplicated & clustered mono-reads.
 rule ref_out:
-    input:
-        monoFA=expand("{path}/output_denovo/monos/{sample}.renamed.fa",  path=config["output_dir"],sample=MONOS)
-    output:
-        ref=(expand("{path}/output_denovo/ref.fa",path=config["output_dir"]))
     params:
-        inputdir=expand("{path}/output_denovo/",  path=config["output_dir"])
+        inputprefix=expand("{renamedmono_dir}/",  renamedmono_dir=config["renamedmono_dir"])
+    input:
+        renamed=expand("{renamedmono_dir}/{sample}.renamed.fa", renamedmono_dir=config["renamedmono_dir"], sample=MONOS)
+    output:
+        ref=expand("{ref_dir}/ref.fa", ref_dir=config["ref_dir"])
+    #log: NULL
+    benchmark:
+        "../Benchmarks/ref_out.benchmark.tsv"
+    #conda: NULL
+    #threads: NULL
     shell:
-        "cat {params.inputdir}/monos/*.renamed.fa > {output.ref}"
+        """
+        cat {params.inputprefix}*.renamed.fa > {output.ref}
+        """

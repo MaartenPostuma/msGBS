@@ -1,37 +1,38 @@
-# Authors v1.0 (Legacy): 
+# Authors v1.0 (Legacy):    ..., ..., ... & ...
 # Authors v2.0 (New):       Jelle van der Heide
 # Date:                     ../../..
 # 
 # This file contains all msGBS pipeline functionality related to pre-processing raw reads in preparation for analysis. 
+# Additionally, these rules can process a single pair of read files., as well as multiple, granted the barcode-file adheres
+# to the guidelines stated in the README.
 # --------------------------------------------------------------------------------------------------------------------
 
 
 
 # All reads are trimmed for adapters and Poly-G's. Besides trimming, PCR duplicates and low-quality reads
-# are filtered out of the read files with fastP.
+# are filtered out  with fastP.
 # -----
-# Input:    - The first read file with raw reads.
-#           - The second read file with raw reads.
-# Output:   - The first file with trimmed reads, from which low quality reads and PCR duplicates have been removed. 
-#           - The second file with trimmed reads, from which low quality reads and PCR duplicates have been removed. 
+# Input:    - The read files with raw reads.
+# Output:   - The files with trimmed reads, from which low quality reads and PCR duplicates have been removed. 
 #           - A report in HTML format containing quality control results.
 #           - A report in JSON format containing quality control results.
 rule deduplicate_trim:
     params:
+        run="{run}",
         adapter1=config["adapter1"],
         adapter2=config["adapter2"]
     input:
-        reads1=expand("{input}/{read1}",input=config["input_dir"],read1=config["Read1"]),
-        reads2=expand("{input}/{read2}",input=config["input_dir"],read2=config["Read2"])
+        reads1=expand("{input}/{{run}}_R1.fq.gz",input=config["input_dir"]),
+        reads2=expand("{input}/{{run}}_R2.fq.gz",input=config["input_dir"])
     output:
-        filtered1=expand("{deduplicated_dir}/{name}.1.fq.gz", deduplicated_dir=config["deduplicated_dir"], name=read1_sub),
-        filtered2=expand("{deduplicated_dir}/{name}.2.fq.gz", deduplicated_dir=config["deduplicated_dir"], name=read2_sub),
-        fastp_html=expand("{preprocessing_out}/Preprocessing.html", preprocessing_out=config["preprocessing_out"]),
-        fastp_json=expand("{preprocessing_out}/Preprocessing.json", preprocessing_out=config["preprocessing_out"]),
+        filtered1=temp(expand("{deduplicated_dir}/{{run}}_R1.fq.gz", deduplicated_dir=config["deduplicated_dir"])),
+        filtered2=temp(expand("{deduplicated_dir}/{{run}}_R2.fq.gz", deduplicated_dir=config["deduplicated_dir"])),
+        fastp_html=expand("{fastpfiles_dir}/{{run}}Preprocessing.html", fastpfiles_dir=config["fastpfiles_dir"]),
+        fastp_json=expand("{fastpfiles_dir}/{{run}}Preprocessing.json", fastpfiles_dir=config["fastpfiles_dir"])
     log: 
-        "../Logs/Preprocessing/deduplicate_trim.log"
+        "../Logs/Preprocessing/deduplicate_trim_{run}.log"
     benchmark: 
-        "../Benchmarks/deduplicate_trim.benchmark.tsv"
+        "../Benchmarks/deduplicate_trim.benchmark_{run}.tsv"
     conda: 
         "../Envs/deduplication.yaml"
     threads: 
@@ -55,33 +56,45 @@ rule deduplicate_trim:
             2> {log}
         """ 
 
-# Considering the barcodefile contains a significant portion of data that is to be considered irrelevant,
-# this rule handles extracting said relevant data from the file. This data is stored in a new, split-up barcodefile which
+# Considering the barcode-file contains numerous columns of data that is irrelevant in this pipeline, this rule handles extracting 
+# the relevant data from the file. The relevant data is stored in a new, split-up barcodefile which
 # can in turn be used as input for other Rules instead of the bloated original barcodefile. Afterwards, stacks is used to process radtags, which can be fetched 
-# from the filtered barcode-file.
+# from the filtered barcode-file. 
+# [NOTE] As snakemake is somewhat strict in declaring which rules expext what data, this rule's output is officially considered to be a directory. However, 
+#        The proper output should be considered to be the reads, demultiplexed in separate files named after the correct sample. As multiple runs can be processed
+#        at once, they will be temporarily stored separately, to be merged or moved by the rule that follows this one. The temproary directory that this rule
+#        outputs is not to be used, and is only to be considered a load bearing parameter for the actual output. 
 # -----     
-# Input:    - A .tsv-file containing read barcodes, which includes data surrounding their origin.
-#           - The first quality controlled read file.
-#           - The second quality controlled read file.
-# Output:   - A filtered version of the file mentioned above. Data irrelevant to the pre-processing-steps
-#             was removed from this version of the file to optimize data-extraction.
-#           - The first demultiplexed read file.
-#           - The second demultiplexed read file.
+# Input:    - A .tsv-file containing read barcodes, which includes data surrounding their origin. 
+#             [NOTE]The contents of this file should always follow the guidelines
+#             stated in the README. The related parameters in the config-file should be adjusted accordingly.
+#           - The quality filtered read files.
+# Output:   - A filtered version of the before mentioned file. Data irrelevant to the pre-processing-steps
+#             was removed from this version of the file to optimize data-extraction and reproducability.
+#           - The demultiplexed read files 
+#             [NOTE]As stated above, these files are not directly mentioned as output in the rule definition.
 rule split_barcodes_demultiplex:
     params:
-        demultiplexed_dir=config["demultiplexed_dir"]
+        run="{run}",
+        barcode_R1=config["barcode_R1"],
+        barcode_R2=config["barcode_R2"],
+        enzyme_R1=config["enzyme_R1"],
+        enzyme_R2=config["enzyme_R2"],
+        readfile_R1=config["readfile_R1"],
+        readfile_R2=config["readfile_R2"],
+        sample=config["sample"],
+        readdir=directory(expand("{demultiplexed_dir}", demultiplexed_dir=config["demultiplexed_dir"]))
     input:
         barcodefile=expand("{input}/{barcodes}", input=config["input_dir"], barcodes=config["barcode_file"]),
-        filtered1=expand("{deduplicated_dir}/{name}.1.fq.gz", deduplicated_dir=config["deduplicated_dir"], name=read1_sub),
-        filtered2=expand("{deduplicated_dir}/{name}.2.fq.gz", deduplicated_dir=config["deduplicated_dir"], name=read2_sub),
+        filtered1=expand("{deduplicated_dir}/{{run}}_R1.fq.gz", deduplicated_dir=config["deduplicated_dir"]),
+        filtered2=expand("{deduplicated_dir}/{{run}}_R2.fq.gz", deduplicated_dir=config["deduplicated_dir"])
     output:
-        barcodefilefiltered=expand("{output}/{barcodesfiltered}", output=config["output_dir"], barcodesfiltered=config["barcodefiltered_file"]),
-        demultiplexed1=expand("{demultiplexed_dir}/{sample}.1.fq.gz", demultiplexed_dir=config["demultiplexed_dir"], sample=SAMPLES),
-        demultiplexed2=expand("{demultiplexed_dir}/{sample}.2.fq.gz", demultiplexed_dir=config["demultiplexed_dir"], sample=SAMPLES)
+        barcodefilefiltered=expand("{barcodes_dir}/{{run}}_{barcodesfiltered}", barcodes_dir=config["barcodes_dir"], barcodesfiltered=config["barcodefiltered_file"]),
+        tmpdir=temp(directory(expand("{demultiplexed_dir}/{{run}}", demultiplexed_dir=config["demultiplexed_dir"])))
     log: 
-        "../Logs/Preprocessing/split_barcode_file.log"
+        "../Logs/Preprocessing/split_barcode_file_{run}.log"
     benchmark: 
-        "../Benchmarks/split_barcode_file.benchmark.tsv"
+        "../Benchmarks/split_barcode_file.benchmark_{run}.tsv"
     conda: 
         "../Envs/deduplication.yaml"
     threads: 
@@ -94,44 +107,49 @@ rule split_barcodes_demultiplex:
 
         for column in "${{!headerList[@]}}"; do
             case "${{headerList[$column]}}" in
-                Barcode_R1)
+                {params.barcode_R1})
                     barcodeR1Index="${{column}}"
                     ;;
-                Barcode_R2)
+                {params.barcode_R2})
                     barcodeR2Index="${{column}}"
                     ;;
-                Sample)
+                {params.sample})
                     sampleIndex="${{column}}"
                     ;;
-                ENZ_R1)
+                {params.readfile_R1})
+                    rawR1Index="${{column}}"
+                    ;;
+                {params.enzyme_R1})
                     ER1=$( echo "$content" |cut -f $(("${{column}}" + 1)))
                     ;;
-                ENZ_R2)
+                {params.enzyme_R2})
                     ER2=$( echo "$content" |cut -f $(("${{column}}" + 1)))
                     ;;
             esac
         done
-
         headersPassed=false
         tail +2 {input.barcodefile} | while read line; do
             if [ $headersPassed ]; then
                     R1=$( echo "$line" |cut -f $(($barcodeR1Index + 1)))
                     R2=$( echo "$line" |cut -f $(($barcodeR2Index + 1)))
                     Sample=$( echo "$line" |cut -f $(($sampleIndex + 1)))
+                    rawR1=$( echo "$line" |cut -f $(($rawR1Index + 1)))
                 {{
-                    printf "%s\t%s\t%s\n" "$R1" "$R2" "$Sample"
+                    if [[ $rawR1 == "{params.run}_R1.fq.gz" ]]; then
+                        printf "%s\t%s\t%s\n" "$R1" "$R2" "$Sample"
+                    fi
                 }} >> {output.barcodefilefiltered}
             else
                 header=$( echo "$line")
                 headersPassed=true
             fi
         done
-        
+        mkdir {output.tmpdir}
         process_radtags \
             -1 {input.filtered1} \
             -2 {input.filtered2} \
             -b {output.barcodefilefiltered} \
-            -o {params.demultiplexed_dir} \
+            -o {output.tmpdir} \
             -r \
             --inline_inline \
             --renz_1 "$ER1" \
@@ -142,26 +160,53 @@ rule split_barcodes_demultiplex:
             2> {log}
         """
 
+# In case there number of samples exceeds the number of available barcodes, multiple runs may required, which results in multiple read-pair files
+# However, as these runs re-use barcodes, process radtags is unable to properly process them all at once. This requires separate radtags results to be stored in separate 
+# directories. This rule essentially undoes this separation by merging or moving sample files from each directory to one general directory. In case two
+# files in different directories have a common name, they are to be considered the same sample and end up merged into a single file. Unique files are
+# simply moved to the target directory.
+# -----     
+# Input:    - The demultiplexed read files. 
+#             [NOTE]As stated above, these files are not directly mentioned as input in the rule definition. They are fetched from separate directories named after the run.
+# Output:   - All demultiplexed read files, any duplicate sample merged into a single file. 
+rule rename_samples:
+    params:
+        lambda w: {SAMPLES[w.sample]}, 
+        readfile="{readfile}",
+        demultiplexed_dir=config["demultiplexed_dir"],
+        renamedunzipped=expand("{renamed_dir}/{{sample}}.{{readfile}}.fq", renamed_dir=config["renamed_dir"], sample=SAMPLES, readfile=readfile)
+    input:
+        tmpdir=expand("{demultiplexed_dir}/{run}", demultiplexed_dir=config["demultiplexed_dir"], run=RUN)
+    output:
+        renamed=temp(expand("{renamed_dir}/{{sample}}.{{readfile}}.fq.gz", renamed_dir=config["renamed_dir"], sample=SAMPLES, readfile=readfile))
+    log:
+        "../Logs/Preprocessing/rename_samples_{sample}_{readfile}.log"
+    benchmark: 
+        "../Benchmarks/rename_samples_{sample}_{readfile}.benchmark.tsv"
+    #conda: NULL
+    threads:
+        1
+    shell:
+        """
+        zcat {params.demultiplexed_dir}/*/{wildcards.sample}.{params.readfile}.fq.gz > {params.renamedunzipped} 2> {log}
+        gzip {params.renamedunzipped} 2> {log}
+        """
+
 # To be able to properly track which segment of refseq the sample reads map on, the read headers have to be altered. This rule
 # adjusts read headers so that it contains information like flowcell, lane and sample of origin as read group indicator.
-# Considering there are multiple samples, as well as multiple versions of each sample read-file (as they are paired) 
-# this rule repeats it's process for each version of each sample.
 # -----     
-# Input:    - A .tsv-file containing read barcodes, which includes data surrounding their origin.
-#           - A quality controlled read file.
-# Output:   - A filtered version of the file mentioned above. Data irrelevant to the pre-processing-steps
-#             was removed from this version of the file to optimize data-extraction.
-#           - The first demultiplexed read file.
+# Input:    - A demultiplexed read file.
+# Output:   - A demultiplexed read file readgroups added to it's read headers.
 rule readgroup_headers: 
     params:
-        readfile="{readfile}",
         sample="{sample}",
+        readfile="{readfile}",
         flowcell=flowCell,
-        lane=lane,
+        lane=lane
     input:
-        read=expand("{demultiplexed_dir}/{{sample}}.{{readfile}}.fq.gz", demultiplexed_dir=config["demultiplexed_dir"]),
+        read=expand("{renamed_dir}/{{sample}}.{{readfile}}.fq.gz",renamed_dir=config["renamed_dir"])
     output:
-        readgrouped=expand("{readgrouped_dir}/{{sample}}.{{readfile}}.fq.gz",readgrouped_dir=config["readgrouped_dir"]),
+        readgrouped=temp(expand("{readgrouped_dir}/{{sample}}.{{readfile}}.fq.gz",readgrouped_dir=config["readgrouped_dir"]))
     #log: NULL
     benchmark: 
         "../Benchmarks/headers_{sample}_{readfile}.benchmark.tsv"
@@ -170,63 +215,63 @@ rule readgroup_headers:
         8
     shell:
         """
-        zcat {input.read} | 
-        cut -f1 -d ' ' | 
-        sed -e '/^@/ s/$/\tRG:Z:{params.flowcell}_{params.lane}_{params.sample}/'| 
-        gzip -c   > {output.readgrouped}
+        if [ -f '{input.read}' ]; then
+            zcat {input.read} | 
+            cut -f1 -d ' ' | 
+            sed -e '/^@/ s/$/\tRG:Z:{params.flowcell}_{params.lane}_{params.sample}/'| 
+            gzip -c   > {output.readgrouped}
+        else
+            touch {output.readgrouped}
+        fi
         """
 
-rule cat:
+# This rule re-combines all reads into two fully preprocessed read files. While these files are currently unused 
+# downstream, they are still generated to give users insight in how their input has been processed. 
+# -----     
+# Input:    - All preprocessed read files (demultiplexed), all either numbered 1 or 2.
+# Output:   - A file which contains all preprocessed reads that remain, numbered either 1 or 2.
+rule cat_all_preprocessed:
     params:
         readfile="{readfile}",
-        path=expand("{path}/", path=config["tmp_dir"]),
-        outbase=expand("{path}/Preprocessing/demultiplexed_R",  path=config["output_dir"])
+        readgrouped_dir=expand("{readgrouped_dir}/", readgrouped_dir=config["readgrouped_dir"])
     input:
-        R=expand("{path}/Preprocessing/Sampleheaders/{sample}.{readfile}.fq.gz",path=config["tmp_dir"], sample=SAMPLES, readfile=readfile),
+        readgroupedsample=expand("{readgrouped_dir}/{sample}.{{readfile}}.fq.gz",readgrouped_dir=config["readgrouped_dir"], sample=SAMPLES)
     output:
-        outFile=expand("{path}/Preprocessing/demultiplexed_R{{readfile}}.fq.gz",  path=config["output_dir"]),
-    log: "../Logs/Preprocessing/cat_{readfile}.log"
-    benchmark: "../Benchmarks/cat_{readfile}.benchmark.tsv"
-    threads: 1
+        allpreprocessed=expand("{allpreprocessed_dir}/preprocessed_R{{readfile}}.fq.gz",  allpreprocessed_dir=config["allpreprocessed_dir"])
+    log: 
+        "../Logs/Preprocessing/cat_{readfile}.log"
+    benchmark: 
+        "../Benchmarks/cat_{readfile}.benchmark.tsv"
+    #conda: NULL
+    threads: 
+        1
     shell:
         """
-        ls -v {params.path}Preprocessing/Sampleheaders/*.{readfile}.fq.gz | 
-        xargs cat  >> {params.outbase}{readfile}.fq.gz
+        ls -v {params.readgrouped_dir}*.{params.readfile}.fq.gz | 
+        xargs cat  >> {output.allpreprocessed}
         """
 
-#rule cat:    backup
-#    params:
-#        readfile="{readfile}",
-#        path=expand("{path}/", path=config["tmp_dir"]),
-#        outbase=expand("{path}/Preprocessing/demultiplexed_R",  path=config["output_dir"])
-#    input:
-#        R=expand("{path}/Preprocessing/Sampleheaders/{sample}.{readfile}.fq.gz",path=config["tmp_dir"], sample=SAMPLES, readfile=readfile),
-#    output:
-#        outFile=expand("{path}/Preprocessing/demultiplexed_R{{readfile}}.fq.gz",  path=config["output_dir"]),
-#    log: "../Logs/Preprocessing/cat_{readfile}.log"
-#    benchmark: "../Benchmarks/cat_{readfile}.benchmark.tsv"
-#    threads: 1
-#    shell:
-#        """
-#        ls -v {params.path}Preprocessing/Sampleheaders/*.{readfile}.fq.gz | 
-#        xargs cat  >> {params.outbase}{readfile}.fq.gz
-#        """
-
+# Since the reference-sequence is to be constructed exclusively from reads that come from mono-samples, these sample-reads are copied to another
+# directory, where they can easily be called by reference creation rules.
+# -----     
+# Input:    - A preprocessed mono read-file.
+# Output:   - A preprocessed mono read-file, now copied to a different directory.
 rule move_monos: 
     params:
         readfile="{readfile}",
-        sample='{sample}',
-        outputdir=expand("{path}/Preprocessing/monos", path=config["output_dir"]),
+        sample=SAMPLES
     input:
-        R=expand("{path}/Preprocessing/Sampleheaders/{{sample}}.{{readfile}}.fq.gz",path=config["tmp_dir"]),
+        mono=expand("{readgrouped_dir}/{{sample}}.{{readfile}}.fq.gz",readgrouped_dir=config["readgrouped_dir"])
     output:
-        R_demulti=expand("{path}/Preprocessing/monos/{{sample}}.demultiplexed_R{{readfile}}.fq.gz",  path=config["output_dir"]),
-    log: "../Logs/Preprocessing/move_monos_{sample}_{readfile}.log"
-    benchmark: "../Benchmarks/move_monos_{sample}_{readfile}.benchmark.tsv"
-    #conda:
-    threads: 1
+        movedmono=expand("{mono_dir}/{{sample}}.{{readfile}}.fq.gz", mono_dir=config["mono_dir"])
+    log: 
+        "../Logs/Preprocessing/move_monos_{sample}_{readfile}.log"
+    benchmark: 
+        "../Benchmarks/move_monos_{sample}_{readfile}.benchmark.tsv"
+    #conda: NULL
+    threads: 
+        1
     shell:
         """
-        cp {input.R} {output.R_demulti}
+        cp {input.mono} {output.movedmono}
         """
-
