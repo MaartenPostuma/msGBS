@@ -223,7 +223,7 @@ rule mapping_Star:
         r1out=expand("{readgrouped_dir}/{{sample}}.1.fq",readgrouped_dir=config["readgrouped_dir"]),
         r2out=expand("{readgrouped_dir}/{{sample}}.1.fq",readgrouped_dir=config["readgrouped_dir"])
     input:
-        genome=expand("{map_index_dir}/Genome" , map_index_dir=config["map_index_dir"]),
+        genome=expand("{map_index_dir}/Star/Genome" , map_index_dir=config["map_index_dir"]),
         r1=expand("{readgrouped_dir}/{{sample}}.1.fq.gz",readgrouped_dir=config["readgrouped_dir"]),
         r2=expand("{readgrouped_dir}/{{sample}}.1.fq.gz",readgrouped_dir=config["readgrouped_dir"])
     output:        
