@@ -57,6 +57,29 @@ rule blast:
             2> {log}
         """
 
+rule temp_blastref:
+    input:
+        ref=expand("{ref_dir}/ref.fa", ref_dir=config["ref_dir"]),
+        blastresults=expand("{blasting_out}/blastresults.tsv", blasting_out=config["blasting_out"])
+    output:
+        eukaryota_ref=expand("{blasting_out}/Eukaryota_ref.fa", blasting_out=config["blasting_out"]),
+    params:
+        blasting_out=config["blasting_out"],
+        sup_dir=config["sup_dir"]
+    shell:
+        """
+        python Scripts/temp_solution_blast_parse.py \
+            -i {input.blastresults} \
+            -r {input.ref} \
+            -F {params.sup_dir}/OTHER_FUNGI_NAMES.txt \
+            -f {params.sup_dir}/Flowering_plant_genera_list.csv \
+            -b {params.sup_dir}/Bryophytes_genera_list.csv \
+            -G {params.sup_dir}/Gymnosperms_genera_list.csv \
+            -P {params.sup_dir}/Pteridophytes_genera_list.csv \
+            -dir '{params.blasting_out}' 
+        """
+
+"""
 # While this rule may seem a bit large at first, what it does really isn't all that impressive. In short, this rule parses the
 # BLAST-result file and extracts data of interest. The main focus here lies on filtering non-eukaryotic reads from the reference.
 # Reads that belong to other kingdoms are saved in separate ref files, as well as their scientific names and headers (both also separate). 
@@ -70,8 +93,7 @@ rule blast:
 #           - Files that contain the filtered meta-reference for a specific super kingdom.
 #           - The statistics of the blast query, specifically how many reads were assigned to which super kingdom.
 rule blastref:
-    params:
-        outputDir=expand("{path}/output_blast/", path=config["output_dir"])
+    #params NULL
     input:
         ref=expand("{ref_dir}/ref.fa", ref_dir=config["ref_dir"]),
         blastresults=expand("{blasting_out}/blastresults.tsv", blasting_out=config["blasting_out"]),
@@ -112,7 +134,7 @@ rule blastref:
     threads: 
         32
     shell:      
-        """
+        """"""
         touch {output.bryophyta_names}
         touch {output.eukaryota_names}
         touch {output.imperia_names}
