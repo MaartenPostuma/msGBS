@@ -28,7 +28,6 @@
 # -----     
 # Input:    - A de-novo assembled meta-reference file.
 # Output:   - The results from the BLAST query, in .tsv format
-"""
 rule blast:
     params:
         blastDB=config["blastDB"]
@@ -45,7 +44,7 @@ rule blast:
     threads: 
         32
     shell:
-        """""""
+        """
         export BLASTDB={params.blastDB}
         blastn \
             -query {input.ref} \
@@ -66,6 +65,7 @@ rule temp_blastref:
     params:
         blasting_out=config["blasting_out"],
         sup_dir=config["sup_dir"]
+    conda: "../Envs/blastparse.yaml"
     shell:
         """
         python Scripts/temp_solution_blast_parse.py \

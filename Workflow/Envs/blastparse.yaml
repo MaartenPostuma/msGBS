@@ -1,0 +1,8 @@
+name: blastparse
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - pandas=2.2.3
+  - biopython=1.84
