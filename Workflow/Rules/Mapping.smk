@@ -179,11 +179,11 @@ rule mapping_BWA:
 rule mapping_star_index:
     params:
         indexprefix=expand("{map_index_dir}", map_index_dir=config["map_index_dir"]),
-        indextemp=expand("../Misc/Mapping/Indexed")
+        indextemp=expand("../Misc/Mapping/Indexed/Star")
     input:
         refblasted=expand("{blasting_out}/Eukaryota_ref.fa",blasting_out=config["blasting_out"])
     output:
-        genome=expand("{map_index_dir}/Genome" , map_index_dir=config["map_index_dir"])
+        genome=expand("{map_index_dir}/Star/Genome" , map_index_dir=config["map_index_dir"])
     log: 
         "../Logs/Mapping/mapping_star_index.log"
     benchmark: 
@@ -244,7 +244,7 @@ rule mapping_Star:
         gunzip -f {input.r2}
         STAR \
             runThreadN {threads} \
-            --genomeDir {params.indexprefix} \
+            --genomeDir {params.indexprefix}/Star \
             --readFilesIn {params.r1out} {params.r2out} \
             --outSAMattributes NM MD AS \
             --outSAMtype SAM \
