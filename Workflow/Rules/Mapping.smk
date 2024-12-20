@@ -17,11 +17,11 @@
 # Output:   - An undisclosed number of index files, depending on reference size.
 rule mapping_Bowtie2_index:
     params: 
-        indexprefix=expand("{map_index_dir}", map_index_dir=config["map_index_dir"])
+        indexprefix=expand("{map_index_dir}/Bowtie/index", map_index_dir=config["map_index_dir"])
     input: 
         refblasted=expand("{blasting_out}/Eukaryota_ref.fa",blasting_out=config["blasting_out"])
     output:
-        index=expand("{map_index_dir}/index.1.bt2", map_index_dir=config["map_index_dir"])
+        index=expand("{map_index_dir}/Bowtie/index.1.bt2", map_index_dir=config["map_index_dir"])
     log:
         out="../Logs/Mapping/mapping_bowtie2_index.out.log", 
         err="../Logs/Mapping/mapping_bowtie2_index.err.log"
@@ -57,9 +57,9 @@ rule mapping_Bowtie2_index:
 rule mapping_Bowtie2:   
     params:
         sample='{sample}',
-        indexprefix=expand("{map_index_dir}", map_index_dir=config["map_index_dir"])
+        indexprefix=expand("{map_index_dir}/Bowtie/index", map_index_dir=config["map_index_dir"])
     input:
-        index=expand("{map_index_dir}/index.1.bt2", map_index_dir=config["map_index_dir"]),
+        index=expand("{map_index_dir}/Bowtie/index.1.bt2", map_index_dir=config["map_index_dir"]),
         r1=expand("{readgrouped_dir}/{{sample}}.1.fq.gz",readgrouped_dir=config["readgrouped_dir"]),
         r2=expand("{readgrouped_dir}/{{sample}}.1.fq.gz",readgrouped_dir=config["readgrouped_dir"])
     output:
@@ -101,11 +101,11 @@ rule mapping_Bowtie2:
 # Output:   - An undisclosed number of index files, depending on reference size.
 rule mapping_bwa_index:
     params: 
-        indexprefix=expand("{map_index_dir}", map_index_dir=config["map_index_dir"])
+        indexprefix=expand("{map_index_dir}/Bwa", map_index_dir=config["map_index_dir"])
     input: 
         refblasted=expand("{blasting_out}/Eukaryota_ref.fa",blasting_out=config["blasting_out"])
     output:
-        index=expand("{map_index_dir}/index.amb", map_index_dir=config["map_index_dir"])
+        index=expand("{map_index_dir}/Bwa/index.amb", map_index_dir=config["map_index_dir"])
     log: 
         "../Logs/Mapping/mapping_bwa_index.log"
     benchmark:
@@ -138,9 +138,9 @@ rule mapping_bwa_index:
 rule mapping_BWA:
     params:
         sample='{sample}',
-        indexprefix=expand("{map_index_dir}", map_index_dir=config["map_index_dir"])
+        indexprefix=expand("{map_index_dir}/Bwa/index", map_index_dir=config["map_index_dir"])
     input:
-        index=expand("{map_index_dir}/index.amb", map_index_dir=config["map_index_dir"]),
+        index=expand("{map_index_dir}/Bwa/index.amb", map_index_dir=config["map_index_dir"]),
         r1=expand("{readgrouped_dir}/{{sample}}.1.fq.gz",readgrouped_dir=config["readgrouped_dir"]),
         r2=expand("{readgrouped_dir}/{{sample}}.1.fq.gz",readgrouped_dir=config["readgrouped_dir"])
     output:
@@ -179,12 +179,12 @@ rule mapping_BWA:
 # Output:   - An undisclosed number of index files, depending on reference size.
 rule mapping_star_index:
     params:
-        indexprefix=expand("{map_index_dir}", map_index_dir=config["map_index_dir"]),
+        indexprefix=expand("{map_index_dir}/Star", map_index_dir=config["map_index_dir"]),
         indextemp=expand("../Misc/Mapping/Indexed/Star")
     input:
         refblasted=expand("{blasting_out}/Eukaryota_ref.fa",blasting_out=config["blasting_out"])
     output:
-        genome=expand("{map_index_dir}/Genome" , map_index_dir=config["map_index_dir"])
+        genome=expand("{map_index_dir}/Star/Genome" , map_index_dir=config["map_index_dir"])
     log: 
         "../Logs/Mapping/mapping_star_index.log"
     benchmark: 
@@ -204,7 +204,7 @@ rule mapping_star_index:
             --genomeDir {params.indexprefix} \
             --genomeFastaFiles {input.refblasted} \
             --outTmpDir {params.indextemp} \
-            --limitGenomeGenerateRAM 1600000000000 \
+            --limitGenomeGenerateRAM 72475476234 \
             2> {log}
         """
 
@@ -220,11 +220,11 @@ rule mapping_star_index:
 rule mapping_Star:
     params:
         sample='{sample}',
-        indexprefix=expand("{map_index_dir}", map_index_dir=config["map_index_dir"]),
+        indexprefix=expand("{map_index_dir}/Star", map_index_dir=config["map_index_dir"]),
         r1out=expand("{readgrouped_dir}/{{sample}}.1.fq",readgrouped_dir=config["readgrouped_dir"]),
         r2out=expand("{readgrouped_dir}/{{sample}}.2.fq",readgrouped_dir=config["readgrouped_dir"])
     input:
-        genome=expand("{map_index_dir}/Genome" , map_index_dir=config["map_index_dir"]),
+        genome=expand("{map_index_dir}/Star/Genome" , map_index_dir=config["map_index_dir"]),
         r1=expand("{readgrouped_dir}/{{sample}}.1.fq.gz",readgrouped_dir=config["readgrouped_dir"]),
         r2=expand("{readgrouped_dir}/{{sample}}.2.fq.gz",readgrouped_dir=config["readgrouped_dir"])
     output:        
@@ -245,11 +245,11 @@ rule mapping_Star:
         gunzip -f {input.r2}
         STAR \
             runThreadN {threads} \
-            --genomeDir {params.indexprefix}/Star \
+            --genomeDir {params.indexprefix} \
             --readFilesIn {params.r1out} {params.r2out} \
             --outSAMattributes NM MD AS \
             --outSAMtype SAM \
-            --outFileNamePrefix ../Output/mapping/{params.sample}_ \
+            --outFileNamePrefix ../Output/Mapping/{params.sample}_ \
             --outFilterMatchNminOverLread 0.95 \
             --clip3pNbases 1 1 \
             --outSAMorder PairedKeepInputOrder \
@@ -265,7 +265,9 @@ rule mapping_Star:
             --alignMatesGapMax 20 \
             --readMapNumber \
             -1 2> {log.star}
-        mv ../Output/mapping/{params.sample}_Aligned.out.sam {output.samOut}
+        mv ../Output/Mapping/{params.sample}_Aligned.out.sam {output.samOut}
         samtools view -b -o {output.bamOut} {output.samOut} \
             2> {log.samtools}
+        gzip -f {params.r1out}
+        gzip -f {params.r2out}
         """

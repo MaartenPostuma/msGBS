@@ -28,33 +28,33 @@
 # -----     
 # Input:    - A de-novo assembled meta-reference file.
 # Output:   - The results from the BLAST query, in .tsv format
-rule blast:
-    params:
-        blastDB=config["blastDB"]
-    input:
-        ref=expand("{ref_dir}/ref.fa", ref_dir=config["ref_dir"])
-    output:
-        blastresults=expand("{blasting_out}/blastresults.tsv", blasting_out=config["blasting_out"])
-    log: 
-        "../Logs/Blasting/blast.log"
-    benchmark: 
-        "../Benchmarks/blast.benchmark.tsv"
-    conda: 
-        "../Envs/blast.yaml"
-    threads: 
-        32
-    shell:
-        """
-        export BLASTDB={params.blastDB}
-        blastn \
-            -query {input.ref} \
-            -db {params.blastDB}/nt \
-            -out {output.blastresults} \
-            -num_alignments 1 \
-            -num_threads {threads} \
-            -outfmt '6 qseqid sseqid pident evalue bitscore sskingdom sscinames length sstart send' \
-            2> {log}
-        """
+#rule blast:
+#    params:
+#        blastDB=config["blastDB"]
+#    input:
+#        ref=expand("{ref_dir}/ref.fa", ref_dir=config["ref_dir"])
+#    output:
+#        blastresults=expand("{blasting_out}/blastresults.tsv", blasting_out=config["blasting_out"])
+#    log: 
+#        "../Logs/Blasting/blast.log"
+#    benchmark: 
+#        "../Benchmarks/blast.benchmark.tsv"
+#    conda: 
+#        "../Envs/blast.yaml"
+#    threads: 
+#        32
+#    shell:
+#        """
+#        export BLASTDB={params.blastDB}
+#        blastn \
+#            -query {input.ref} \
+#            -db {params.blastDB}/nt \
+#            -out {output.blastresults} \
+#            -num_alignments 1 \
+#            -num_threads {threads} \
+#           -outfmt '6 qseqid sseqid pident evalue bitscore sskingdom sscinames length sstart send' \
+#            2> {log}
+#        """
 
 rule temp_blastref:
     input:

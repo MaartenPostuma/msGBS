@@ -112,7 +112,8 @@ rule stats:
 # Output:   - The files discussing or displaying specific data after applying user-defined filters to the csv file.
 rule filter:
     params: 
-        mapper=MAPPER
+        mapper=MAPPER,
+        outprefix=expand("{analysis_out}/{{mapper}}/",analysis_out=config["analysis_out"])
     input: 
         statscsv=expand("{analysis_out}/{{mapper}}/stats.csv",analysis_out=config["analysis_out"])
     output:
@@ -137,7 +138,7 @@ rule filter:
             -f1 8 \
             -f2 15 \
             -f3 1000 \
-            -op ../Output/stats/ \
+            -op {params.outprefix} \
             > {log.out} \
             2> {log.err}
         """
