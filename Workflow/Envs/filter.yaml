@@ -1,0 +1,7 @@
+name: filter
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - pandas=2.2.3

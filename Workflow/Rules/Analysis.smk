@@ -128,7 +128,7 @@ rule filter:
         log="../Logs/Analysis/filter_{mapper}.log.log"
     benchmark:
         "../Benchmarks/filter_{mapper}.benchmark.tsv"
-    #conda: NULL
+    conda: "../Envs/filter.yaml"
     #threads: NULL
     shell:
         """
