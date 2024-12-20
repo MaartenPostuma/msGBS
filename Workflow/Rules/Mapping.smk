@@ -36,7 +36,7 @@ rule mapping_Bowtie2_index:
         echo "Commencing Bowtie mapping" >> time.txt
         date +%s%N >> time.txt
         bowtie2-build \
-            -f {input.refBlasted} \
+            -f {input.refblasted} \
             {params.indexprefix} \
             -p {threads} \
             > {log.out} \
