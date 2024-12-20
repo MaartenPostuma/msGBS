@@ -36,7 +36,7 @@ rule mapping_Bowtie2_index:
         echo "Commencing Bowtie mapping" >> time.txt
         date +%s%N >> time.txt
         bowtie2-build \
-            -f {params.indexprefix}/ \
+            -f {params.indexprefix}/index \
             -p {threads} \
             > {log.out} \
             2> {log.err}
@@ -183,7 +183,7 @@ rule mapping_star_index:
     input:
         refblasted=expand("{blasting_out}/Eukaryota_ref.fa",blasting_out=config["blasting_out"])
     output:
-        genome=expand("{map_index_dir}/Star/Genome" , map_index_dir=config["map_index_dir"])
+        genome=expand("{map_index_dir}/Genome" , map_index_dir=config["map_index_dir"])
     log: 
         "../Logs/Mapping/mapping_star_index.log"
     benchmark: 
@@ -223,7 +223,7 @@ rule mapping_Star:
         r1out=expand("{readgrouped_dir}/{{sample}}.1.fq",readgrouped_dir=config["readgrouped_dir"]),
         r2out=expand("{readgrouped_dir}/{{sample}}.1.fq",readgrouped_dir=config["readgrouped_dir"])
     input:
-        genome=expand("{map_index_dir}/Star/Genome" , map_index_dir=config["map_index_dir"]),
+        genome=expand("{map_index_dir}/Genome" , map_index_dir=config["map_index_dir"]),
         r1=expand("{readgrouped_dir}/{{sample}}.1.fq.gz",readgrouped_dir=config["readgrouped_dir"]),
         r2=expand("{readgrouped_dir}/{{sample}}.1.fq.gz",readgrouped_dir=config["readgrouped_dir"])
     output:        
