@@ -221,11 +221,11 @@ rule mapping_Star:
         sample='{sample}',
         indexprefix=expand("{map_index_dir}", map_index_dir=config["map_index_dir"]),
         r1out=expand("{readgrouped_dir}/{{sample}}.1.fq",readgrouped_dir=config["readgrouped_dir"]),
-        r2out=expand("{readgrouped_dir}/{{sample}}.1.fq",readgrouped_dir=config["readgrouped_dir"])
+        r2out=expand("{readgrouped_dir}/{{sample}}.2.fq",readgrouped_dir=config["readgrouped_dir"])
     input:
         genome=expand("{map_index_dir}/Genome" , map_index_dir=config["map_index_dir"]),
         r1=expand("{readgrouped_dir}/{{sample}}.1.fq.gz",readgrouped_dir=config["readgrouped_dir"]),
-        r2=expand("{readgrouped_dir}/{{sample}}.1.fq.gz",readgrouped_dir=config["readgrouped_dir"])
+        r2=expand("{readgrouped_dir}/{{sample}}.2.fq.gz",readgrouped_dir=config["readgrouped_dir"])
     output:        
         samOut=temp(expand("{sam_dir}/Star/mapping_sq_{{sample}}.sam",sam_dir=config["sam_dir"])),
         bamOut=temp(expand("{bam_dir}/Star/mapping_sq_{{sample}}.bam",bam_dir=config["bam_dir"]))
