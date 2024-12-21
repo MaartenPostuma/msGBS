@@ -204,7 +204,7 @@ rule mapping_star_index:
             --genomeDir {params.indexprefix} \
             --genomeFastaFiles {input.refblasted} \
             --outTmpDir {params.indextemp} \
-            --limitGenomeGenerateRAM 72476175285 \
+            --limitGenomeGenerateRAM 1600000000000 \
             2> {log}
         """
 

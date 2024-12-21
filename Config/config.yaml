@@ -24,7 +24,8 @@ min_unique_size : 2
 
 # -- main folders
 output_dir    : "../Output"
-input_dir     : "../Input"
+#input_dir     : "../Input"
+input_dir     : "../../../../vol/ribesecology/jelle"
 tmp_dir       : "../Misc"
 sup_dir       : "Supplement" 
 
