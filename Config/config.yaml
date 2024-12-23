@@ -1,17 +1,28 @@
-# barcode settings
-barcode_R1  : "Barcode_R1"
-barcode_R2  : "Barcode_R2"
-sample      : "Sample"
-readfile_R1 : "rawR1"
-readfile_R2 : "rawR2"
-enzyme_R1   : "ENZ_R1"
-enzyme_R2   : "ENZ_R2"
-wobble_R1   : "Wobble_R1"
-wobble_R2   : "Wobble_R2"
-
+# To select which mapper to use, change this to either Bowtie, Bwa of Star. If all mappers should be used 
 mapper_mode : "All"
+# This parameter defines the name of the barcode file in the Input folder.
+barcode_file: "barcodes.tsv"
+# Below, set the location of the Input folder.
+input_dir     : "../../../../vol/ribesecology/jelle"
+# To change the multimap, edit the number after k or c, depending on which mapper(s) should be used. If multimapping should 
+# be turned off, this should be an empty string.
+multimap_bowtie : "-k 10"
+multimap_bwa    : "-c 10"
+# In case the STAR mapper is to be used, set the value below to whatever value feels like a sufficient value  for RAM usage in bits.
+# A value too low tends to break the entire thing currently, so better to overshoot than to undershooot. The default value should be enough.
+star_ram        : 1600000000000
+# In case the adapters that should be used are different than the ones defined below, 
+# change them to the correct adapters.
+adapter1: "ATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT" 
+adapter2: "CAAGCAGAAGACGGCATACGAGATCGGTCTCGGCATTCCTGCTGAACCGCTCTTCCGATCT"
 
-# should be divisible by 4
+
+
+# for now, ignore the settings defined below.
+# ------------------------------------------------------------------------------------
+
+
+# should be divisible by 4 (implementation at a later point)
 max_threads: 16
 #number of sequencing cycles
 pcr_cycles        : 150
@@ -24,8 +35,6 @@ min_unique_size : 2
 
 # -- main folders
 output_dir    : "../Output"
-#input_dir     : "../Input"
-input_dir     : "../../../../vol/ribesecology/jelle"
 tmp_dir       : "../Misc"
 sup_dir       : "Supplement" 
 
@@ -73,9 +82,15 @@ Read2   : "readsRfull.fq.gz"
 genus   : "Relevant_organisms.csv"
 
 # -- Preprocessing
-barcode_file: "barcodes.tsv"
 barcodefiltered_file: "barcodefiltered.tsv"
 
-#(goed om hier de kolomnamen van de barcode file in te laten vullen. Dan hoeft dat niet aangepast in de code
-adapter1: "ATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT" 
-adapter2: "CAAGCAGAAGACGGCATACGAGATCGGTCTCGGCATTCCTGCTGAACCGCTCTTCCGATCT"
+# barcode settings
+barcode_R1  : "Barcode_R1"
+barcode_R2  : "Barcode_R2"
+sample      : "Sample"
+readfile_R1 : "rawR1"
+readfile_R2 : "rawR2"
+enzyme_R1   : "ENZ_R1"
+enzyme_R2   : "ENZ_R2"
+wobble_R1   : "Wobble_R1"
+wobble_R2   : "Wobble_R2"

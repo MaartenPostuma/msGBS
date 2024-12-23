@@ -57,6 +57,7 @@ rule mapping_Bowtie2_index:
 rule mapping_Bowtie2:   
     params:
         sample='{sample}',
+        multimap=config["multimap_bowtie"],
         indexprefix=expand("{map_index_dir}/Bowtie/index", map_index_dir=config["map_index_dir"])
     input:
         index=expand("{map_index_dir}/Bowtie/index.1.bt2", map_index_dir=config["map_index_dir"]),
@@ -78,6 +79,7 @@ rule mapping_Bowtie2:
         """
         bowtie2 \
             -x {params.indexprefix} \
+            {params.multimap} \
             -1 {input.r1} \
             -2 {input.r2} \
             -q \
@@ -138,6 +140,7 @@ rule mapping_bwa_index:
 rule mapping_BWA:
     params:
         sample='{sample}',
+        multimap=config["multimap_bwa"],
         indexprefix=expand("{map_index_dir}/Bwa/index", map_index_dir=config["map_index_dir"])
     input:
         index=expand("{map_index_dir}/Bwa/index.amb", map_index_dir=config["map_index_dir"]),
@@ -161,6 +164,7 @@ rule mapping_BWA:
             -t {threads} \
             -R '@RG\\tID:{params.sample}\\tSM:{params.sample}' \
             {params.indexprefix} \
+            {params.multimap} \
             {input.r1} \
             {input.r2} \
             > {output.samOut} \
@@ -180,7 +184,8 @@ rule mapping_BWA:
 rule mapping_star_index:
     params:
         indexprefix=expand("{map_index_dir}/Star", map_index_dir=config["map_index_dir"]),
-        indextemp=expand("../Misc/Mapping/Indexed/Star")
+        indextemp=expand("../Misc/Mapping/Indexed/Star"),
+        ram=config["star_ram"]
     input:
         refblasted=expand("{blasting_out}/Eukaryota_ref.fa",blasting_out=config["blasting_out"])
     output:
@@ -204,7 +209,7 @@ rule mapping_star_index:
             --genomeDir {params.indexprefix} \
             --genomeFastaFiles {input.refblasted} \
             --outTmpDir {params.indextemp} \
-            --limitGenomeGenerateRAM 1600000000000 \
+            --limitGenomeGenerateRAM {params.ram} \
             2> {log}
         """
 
