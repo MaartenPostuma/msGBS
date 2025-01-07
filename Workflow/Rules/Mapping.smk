@@ -203,6 +203,7 @@ rule mapping_star_index:
         echo "Commencing STAR mapping" >> time.txt
         date +%s%N >> time.txt
         STAR \
+            --genomeChrBinNbits 10 \
             --genomeSAindexNbases 10 \
             --runThreadN {threads} \
             --runMode genomeGenerate \
