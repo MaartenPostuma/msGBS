@@ -32,13 +32,13 @@ rule blast:
     params:
         blastDB=config["blastDB"]
     input:
-        ref=expand("{ref_dir}/ref.fa", ref_dir=config["ref_dir"])
+        ref=expand("{output_dir}/Reference_creation/ref.fa", output_dir=config["output_dir"])
     output:
-        blastresults=expand("{blasting_out}/blastresults.tsv", blasting_out=config["blasting_out"])
+        blastresults=expand("{output_dir}/Blasting/blastresults.tsv", output_dir=config["output_dir"])
     log: 
-        "../Logs/Blasting/blast.log"
+        expand("{output_dir}/Logs/Blasting/blast.log", output_dir=config["output_dir"])
     benchmark: 
-        "../Benchmarks/blast.benchmark.tsv"
+       "../Benchmarks/blast.benchmark.tsv"
     conda: 
         "../Envs/blast.yaml"
     threads: 
@@ -58,12 +58,12 @@ rule blast:
 
 rule temp_blastref:
     input:
-        ref=expand("{ref_dir}/ref.fa", ref_dir=config["ref_dir"]),
-        blastresults=expand("{blasting_out}/blastresults.tsv", blasting_out=config["blasting_out"])
+        ref=expand("{output_dir}/Reference_creation/ref.fa", output_dir=config["output_dir"]),
+        blastresults=expand("{output_dir}/Blasting/blastresults.tsv", output_dir=config["output_dir"])
     output:
-        eukaryota_ref=expand("{blasting_out}/Eukaryota_ref.fa", blasting_out=config["blasting_out"]),
+        eukaryota_ref=expand("{output_dir}/Blasting/Eukaryota_ref.fa", output_dir=config["output_dir"]),
     params:
-        blasting_out=config["blasting_out"],
+        output_dir=config["output_dir"],
         sup_dir=config["sup_dir"]
     conda: "../Envs/blastparse.yaml"
     shell:
@@ -76,7 +76,7 @@ rule temp_blastref:
             -b {params.sup_dir}/Bryophytes_genera_list.csv \
             -G {params.sup_dir}/Gymnosperms_genera_list.csv \
             -P {params.sup_dir}/Pteridophytes_genera_list.csv \
-            -dir '{params.blasting_out}' 
+            -dir '{params.output_dir}/Blasting/' 
         """
 
 """
@@ -95,46 +95,45 @@ rule temp_blastref:
 rule blastref:
     #params NULL
     input:
-        ref=expand("{ref_dir}/ref.fa", ref_dir=config["ref_dir"]),
-        blastresults=expand("{blasting_out}/blastresults.tsv", blasting_out=config["blasting_out"]),
+        ref=expand("{output_dir}/Reference_creation/ref.fa", output_dir=config["output_dir"]),
+        blastresults=expand("{output_dir}/Blasting/blastresults.tsv", output_dir=config["output_dir"]),
         genus_lists=expand("{sup_dir}/{genus}", sup_dir=config["sup_dir"], genus=config["genus"])
     output:
-        bryophyta_names=expand("{blasting_out}/Bryophyta_names.txt", blasting_out=config["blasting_out"]),
-        eukaryota_names=expand("{blasting_out}/Eukaryota_names.txt", blasting_out=config["blasting_out"]),
-        imperia_names=expand("{blasting_out}/Imperia_names.txt", blasting_out=config["blasting_out"]),
-        fungi_names=expand("{blasting_out}/Fungi_names.txt", blasting_out=config["blasting_out"]),
-        arbuscular_names=expand("{blasting_out}/Arbuscular_names.txt", blasting_out=config["blasting_out"]),
-        gymnospermae_names=expand("{blasting_out}/Gymnospermae_names.txt", blasting_out=config["blasting_out"]),
-        pteridophyta_names=expand("{blasting_out}/Pteridophyta_names.txt", blasting_out=config["blasting_out"]),
-        angiospermae_names=expand("{blasting_out}/Angiospermae_names.txt", blasting_out=config["blasting_out"]),
-        archaea_names=expand("{blasting_out}/Archaea_names.txt", blasting_out=config["blasting_out"]),
-        bacteria_names=expand("{blasting_out}/Bacteria_names.txt", blasting_out=config["blasting_out"]),
-        bryophyta=expand("{blasting_out}/Bryophyta.txt", blasting_out=config["blasting_out"]),
-        eukaryota=expand("{blasting_out}/Eukaryota.txt", blasting_out=config["blasting_out"]),
-        imperia=expand("{blasting_out}/Imperia.txt", blasting_out=config["blasting_out"]),
-        fungi=expand("{blasting_out}/Fungi.txt", blasting_out=config["blasting_out"]),
-        arbuscular=expand("{blasting_out}/Arbuscular.txt", blasting_out=config["blasting_out"]),
-        gymnospermae=expand("{blasting_out}/Gymnospermae.txt", blasting_out=config["blasting_out"]),
-        pteridophyta=expand("{blasting_out}/Pteridophyta.txt", blasting_out=config["blasting_out"]),
-        angiospermae=expand("{blasting_out}/Angiospermae.txt", blasting_out=config["blasting_out"]),
-        archaea=expand("{blasting_out}/Archaea.txt", blasting_out=config["blasting_out"]),
-        bacteria=expand("{blasting_out}/Bacteria.txt", blasting_out=config["blasting_out"]),
-        eukaryota_ref=expand("{blasting_out}/Eukaryota_ref.fa", blasting_out=config["blasting_out"]),
-        imperia_ref=expand("{blasting_out}/Imperia_ref.fa", blasting_out=config["blasting_out"]),
-        fungi_ref=expand("{blasting_out}/Fungi_ref.fa", blasting_out=config["blasting_out"]),
-        arbuscular_ref=expand("{blasting_out}/Arbuscular_ref.fa", blasting_out=config["blasting_out"]),
-        angiospermae_ref=expand("{blasting_out}/Angiospermae_ref.fa", blasting_out=config["blasting_out"]),
-        archaea_ref=expand("{blasting_out}/Archaea_ref.fa", blasting_out=config["blasting_out"]),
-        bacteria_ref=expand("{blasting_out}/Bacteria_ref.fa", blasting_out=config["blasting_out"]),
-        stats=expand("{blasting_out}/blastStatistics.txt", blasting_out=config["blasting_out"])
+        bryophyta_names=expand("{output_dir}/Blasting/Bryophyta_names.txt", output_dir=config["output_dir"]),
+        eukaryota_names=expand("{output_dir}/Blasting/Eukaryota_names.txt", output_dir=config["output_dir"]),
+        imperia_names=expand("{output_dir}/Blasting/Imperia_names.txt", output_dir=config["output_dir"]),
+        fungi_names=expand("{output_dir}/Blasting/Fungi_names.txt", output_dir=config["output_dir"]),
+        arbuscular_names=expand("{output_dir}/Blasting/Arbuscular_names.txt", output_dir=config["output_dir"]),
+        gymnospermae_names=expand("{output_dir}/Blasting/Gymnospermae_names.txt", output_dir=config["output_dir"]),
+        pteridophyta_names=expand("{output_dir}/Blasting/Pteridophyta_names.txt", output_dir=config["output_dir"]),
+        angiospermae_names=expand("{output_dir}/Blasting/Angiospermae_names.txt", output_dir=config["output_dir"]),
+        archaea_names=expand("{output_dir}/Blasting/Archaea_names.txt", output_dir=config["output_dir"]),
+        bacteria_names=expand("{output_dir}/Blasting/Bacteria_names.txt", output_dir=config["output_dir"]),
+        bryophyta=expand("{output_dir}/Blasting/Bryophyta.txt", output_dir=config["output_dir"]),
+        eukaryota=expand("{output_dir}/Blasting/Eukaryota.txt", output_dir=config["output_dir"]),
+        imperia=expand("{output_dir}/Blasting/Imperia.txt", output_dir=config["output_dir"]),
+        fungi=expand("{output_dir}/Blasting/Fungi.txt", output_dir=config["output_dir"]),
+        arbuscular=expand("{output_dir}/Blasting/Arbuscular.txt", output_dir=config["output_dir"]),
+        gymnospermae=expand("{output_dir}/Blasting/Gymnospermae.txt", output_dir=config["output_dir"]),
+        pteridophyta=expand("{output_dir}/Blasting/Pteridophyta.txt", output_dir=config["output_dir"]),
+        angiospermae=expand("{output_dir}/Blasting/Angiospermae.txt", output_dir=config["output_dir"]),
+        archaea=expand("{output_dir}/Blasting/Archaea.txt", output_dir=config["output_dir"]),
+        bacteria=expand("{output_dir}/Blasting/Bacteria.txt", output_dir=config["output_dir"]),
+        eukaryota_ref=expand("{output_dir}/Blasting/Eukaryota_ref.fa", output_dir=config["output_dir"]),
+        imperia_ref=expand("{output_dir}/Blasting/Imperia_ref.fa", output_dir=config["output_dir"]),
+        fungi_ref=expand("{output_dir}/Blasting/Fungi_ref.fa", output_dir=config["output_dir"]),
+        arbuscular_ref=expand("{output_dir}/Blasting/Arbuscular_ref.fa", output_dir=config["output_dir"]),
+        angiospermae_ref=expand("{output_dir}/Blasting/Angiospermae_ref.fa", output_dir=config["output_dir"]),
+        archaea_ref=expand("{output_dir}/Blasting/Archaea_ref.fa", output_dir=config["output_dir"]),
+        bacteria_ref=expand("{output_dir}/Blasting/Bacteria_ref.fa", output_dir=config["output_dir"]),
+        stats=expand("{output_dir}/Blasting/blastStatistics.txt", output_dir=config["output_dir"])
     #log: NULL
     benchmark:
-        "../Benchmarks/blastref.benchmark.tsv"
+       "../Benchmarks/blastref.benchmark.tsv"
     #conda NULL
     threads: 
         32
     shell:      
-        """"""
         touch {output.bryophyta_names}
         touch {output.eukaryota_names}
         touch {output.imperia_names}

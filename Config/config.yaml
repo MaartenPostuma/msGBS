@@ -1,3 +1,4 @@
+
 # To select which mapper to use, change this to either Bowtie, Bwa of Star. If all mappers should be used 
 mapper_mode : "All"
 # This parameter defines the name of the barcode file in the Input folder.
@@ -22,6 +23,13 @@ adapter2: "CAAGCAGAAGACGGCATACGAGATCGGTCTCGGCATTCCTGCTGAACCGCTCTTCCGATCT"
 # ------------------------------------------------------------------------------------
 
 
+# ref_mode allows the implementation of an already existing reference. 
+# the default is Create where the reference is created from the monos in the input reads
+# If the reference is Available ref_mode should be set "present" after which the location of the reference (ref_loc)
+# and the location of an csv which has the mapping stats of the monos used for the reference creation in order to do the filtering.
+ref_mode : ""
+ref_loc : ""
+stats_loc : ""
 # should be divisible by 4 (implementation at a later point)
 max_threads: 16
 #number of sequencing cycles
@@ -38,43 +46,6 @@ output_dir    : "../Output"
 tmp_dir       : "../Misc"
 sup_dir       : "Supplement" 
 
-# -- general sub folders
-preprocessing_out: "../Output/Preprocessing"
-preprocessing_tmp: "../Misc/Preprocessing"
-
-blasting_out:   "../Output/Blasting"
-blasting_tmp:   "../Misc/Blasting"
-
-referencecreation_out: "../Output/Referencecreation"
-referencecreation_tmp: "../Misc/Referencecreation"
-
-mapping_out: "../Output/Mapping"
-mapping_tmp: "../Misc/Mapping"
-
-analysis_out: "../Output/Analysis"
-analysis_tmp: "../Misc/Analysis"
-
-# -- specific sub folders
-deduplicated_dir      : "../Misc/Preprocessing/Deduplicated"
-demultiplexed_dir     : "../Misc/Preprocessing/Demultiplexed"
-readgrouped_dir       : "../Misc/Preprocessing/Readgrouped"
-barcodes_dir          : "../Output/Preprocessing/Barcodesfiltered"
-fastpfiles_dir        : "../Output/Preprocessing/Fastpreports"
-allpreprocessed_dir   : "../Output/Preprocessing/Preprocessed"
-renamed_dir           : "../Misc/Preprocessing/Renamed"
-log_dir               : "../Logs"
-logsummary_dir        : "../Output/Analysis/Logsummaries"
-mono_dir              : "../Output/Preprocessing/Preprocessedmonos"
-mergedmono_dir        : "../Misc/Reference_creation/Merged"
-joinedmono_dir        : "../Misc/Reference_creation/Joined"
-sortedmono_dir        : "../Misc/Reference_creation/Sorted"
-dereplicated_dir      : "../Misc/Reference_creation/Dereplicated"
-clustered_dir         : "../Misc/Reference_creation/Clustered"
-renamedmono_dir       : "../Misc/Reference_creation/Renamed"
-ref_dir               : "../Output/Reference_creation"
-sam_dir               : "../Misc/Mapping/Samout"
-bam_dir               : "../Misc/Mapping/Bamout"
-map_index_dir         : "../Output/Mapping/Index"
 
 # -- filenames
 Read1   : "readsFfull.fq.gz"
@@ -94,3 +65,43 @@ enzyme_R1   : "ENZ_R1"
 enzyme_R2   : "ENZ_R2"
 wobble_R1   : "Wobble_R1"
 wobble_R2   : "Wobble_R2"
+
+
+# -- general sub folders
+#preprocessing_out: "../Output/Preprocessing"
+#preprocessing_tmp: "../Misc/Preprocessing"
+
+#blasting_out:   "../Output/Blasting"
+#blasting_tmp:   "../Misc/Blasting"
+
+#referencecreation_out: "../Output/Referencecreation"
+#referencecreation_tmp: "../Misc/Referencecreation"
+
+#mapping_out: "../Output/Mapping"
+#mapping_tmp: "../Misc/Mapping"
+
+#analysis_out: "../Output/Analysis"
+#analysis_tmp: "../Misc/Analysis"
+
+# -- specific sub folders
+#deduplicated_dir      : "../Misc/Preprocessing/Deduplicated"
+#demultiplexed_dir     : "../Misc/Preprocessing/Demultiplexed"
+#readgrouped_dir       : "../Misc/Preprocessing/Readgrouped"
+#barcodes_dir          : "../Output/Preprocessing/Barcodesfiltered"
+#fastpfiles_dir        : "../Output/Preprocessing/Fastpreports"
+#allpreprocessed_dir   : "../Output/Preprocessing/Preprocessed"
+#renamed_dir           : "../Misc/Preprocessing/Renamed"
+#log_dir               : "../Logs"
+#logsummary_dir        : "../Output/Analysis/Logsummaries"
+#mono_dir              : "../Output/Preprocessing/Preprocessedmonos"
+#mergedmono_dir        : "../Misc/Reference_creation/Merged"
+#joinedmono_dir        : "../Misc/Reference_creation/Joined"
+#sortedmono_dir        : "../Misc/Reference_creation/Sorted"
+#dereplicated_dir      : "../Misc/Reference_creation/Dereplicated"
+#clustered_dir         : "../Misc/Reference_creation/Clustered"
+#renamedmono_dir       : "../Misc/Reference_creation/Renamed"
+#ref_dir               : "../Output/Reference_creation"
+#sam_dir               : "../Misc/Mapping/Samout"
+#bam_dir               : "../Misc/Mapping/Bamout"
+#map_index_dir         : "../Output/Mapping/Index"
+

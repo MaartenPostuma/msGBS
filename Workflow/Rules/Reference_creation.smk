@@ -19,19 +19,19 @@
 rule merge_monos:
     params:
         sample='{sample}',
-        supplement=expand("{supplement}", supplement=config["sup_dir"]),
-        outputprefix=expand("{joinedmono_dir}/{{sample}}.notmerged",  joinedmono_dir=config["joinedmono_dir"])
+        supplement="Supplement",
+        outputprefix=expand("{tmp_dir}/Reference_creation/Joined/{{sample}}.notmerged",  tmp_dir=config["tmp_dir"])
     input:
-        R1=expand("{mono_dir}/{{sample}}.1.fq.gz",  mono_dir=config["mono_dir"]),
-        R2=expand("{mono_dir}/{{sample}}.2.fq.gz",  mono_dir=config["mono_dir"])
+        R1=expand("{output_dir}/Preprocessing/Preprocessedmonos/{{sample}}.1.fq.gz",  output_dir=config["output_dir"]),
+        R2=expand("{output_dir}/Preprocessing/Preprocessedmonos/{{sample}}.2.fq.gz",  output_dir=config["output_dir"])
     output:
-        notmergedR1=temp(expand("{joinedmono_dir}/{{sample}}.notmerged_1.fastq.gz",  joinedmono_dir=config["joinedmono_dir"])),
-        notmergedR2=temp(expand("{joinedmono_dir}/{{sample}}.notmerged_2.fastq.gz",  joinedmono_dir=config["joinedmono_dir"])),
-        merged=temp(expand("{mergedmono_dir}/{{sample}}.merged.fastq.gz",  mergedmono_dir=config["mergedmono_dir"]))
+        notmergedR1=temp(expand("{tmp_dir}/Reference_creation/Joined/{{sample}}.notmerged_1.fastq.gz",  tmp_dir=config["tmp_dir"])),
+        notmergedR2=temp(expand("{tmp_dir}/Reference_creation/Joined/{{sample}}.notmerged_2.fastq.gz",  tmp_dir=config["tmp_dir"])),
+        merged=temp(expand("{tmp_dir}/Reference_creation/Merged/{{sample}}.merged.fastq.gz",  tmp_dir=config["tmp_dir"]))
     log: 
-        "../Logs/Reference_creation/merge_monos_{sample}.log"
+        expand("{output_dir}/Logs/Reference_creation/merge_monos_{{sample}}/log",  output_dir=config["output_dir"])
     benchmark:
-        "../Benchmarks/merge_monos_{sample}.benchmark.tsv"
+       "../Benchmarks/merge_monos_{sample}/benchmark.tsv"
     conda: 
         "../Envs/merge_reads.yaml"
     threads: 
@@ -70,14 +70,14 @@ rule join_monos:
         wobble_R2=config["wobble_R2"],
         cycles=config["pcr_cycles"]
     input:
-        notmergedR1=expand("{joinedmono_dir}/{{sample}}.notmerged_1.fastq.gz",  joinedmono_dir=config["joinedmono_dir"]),
-        notmergedR2=expand("{joinedmono_dir}/{{sample}}.notmerged_2.fastq.gz",  joinedmono_dir=config["joinedmono_dir"]),
+        notmergedR1=expand("{tmp_dir}/Reference_creation/Joined/{{sample}}.notmerged_1.fastq.gz",  tmp_dir=config["tmp_dir"]),
+        notmergedR2=expand("{tmp_dir}/Reference_creation/Joined/{{sample}}.notmerged_2.fastq.gz",  tmp_dir=config["tmp_dir"]),
         barcodes=expand("{input_dir}/{barcodes}", input_dir=config["input_dir"], barcodes=config["barcode_file"])
     output:
-        joined=temp(expand("{joinedmono_dir}/{{sample}}.joined.fastq.gz",  joinedmono_dir=config["joinedmono_dir"]))
+        joined=temp(expand("{tmp_dir}/Reference_creation/Joined/{{sample}}.joined.fastq.gz",  tmp_dir=config["tmp_dir"]))
     #log: NULL
     benchmark:
-        "../Benchmarks/join_monos_{sample}.benchmark.tsv"
+       "../Benchmarks/join_monos_{sample}/benchmark.tsv"
     conda: 
         "../Envs/combine_reads.yaml"
     threads:
@@ -148,13 +148,13 @@ rule cat_monos:
     params:
         sample='{sample}'
     input:
-        merged=expand("{mergedmono_dir}/{{sample}}.merged.fastq.gz",  mergedmono_dir=config["mergedmono_dir"]),
-        joined=expand("{joinedmono_dir}/{{sample}}.joined.fastq.gz",  joinedmono_dir=config["joinedmono_dir"])
+        merged=expand("{tmp_dir}/Reference_creation/Merged/{{sample}}.merged.fastq.gz",  tmp_dir=config["tmp_dir"]),
+        joined=expand("{tmp_dir}/Reference_creation/Joined/{{sample}}.joined.fastq.gz",  tmp_dir=config["tmp_dir"])
     output:
-        combined=temp(expand("{joinedmono_dir}/{{sample}}.combined.fastq.gz",  joinedmono_dir=config["joinedmono_dir"]))
+        combined=temp(expand("{tmp_dir}/Reference_creation/Joined/{{sample}}.combined.fastq.gz",  tmp_dir=config["tmp_dir"]))
     #log: NULL
     benchmark:
-        "../Benchmarks/join_monos_{sample}.benchmark.tsv"
+       "../Benchmarks/join_monos_{sample}/benchmark.tsv"
     #conda: NULL
     threads:
         1
@@ -171,13 +171,13 @@ rule sort_monos:
     params:
         sample='{sample}'
     input:
-        combined=expand("{joinedmono_dir}/{{sample}}.combined.fastq.gz",  joinedmono_dir=config["joinedmono_dir"])
+        combined=expand("{tmp_dir}/Reference_creation/Joined/{{sample}}.combined.fastq.gz",  tmp_dir=config["tmp_dir"])
     output:
-        sorted=temp(expand("{sortedmono_dir}/{{sample}}.sorted.fa",  sortedmono_dir=config["sortedmono_dir"]))
+        sorted=temp(expand("{tmp_dir}/Reference_creation/Sorted/{{sample}}.sorted.fa",  tmp_dir=config["tmp_dir"]))
     log: 
-        "../Logs/Reference_creation/sort_monos_{sample}.log"
+        expand("{output_dir}/Logs/Reference_creation/sort_monos_{{sample}}/log",  output_dir=config["output_dir"])
     benchmark:
-        "../Benchmarks/sort_monos_{sample}.benchmark.tsv"
+       "../Benchmarks/sort_monos_{sample}/benchmark.tsv"
     conda: 
         "../Envs/sort.yaml"
     threads:
@@ -201,13 +201,13 @@ rule derep_monos:
         sample='{sample}',
         min_unique_size=config["min_unique_size"]
     input:
-        sorted=expand("{sortedmono_dir}/{{sample}}.sorted.fa",  sortedmono_dir=config["sortedmono_dir"])
+        sorted=expand("{tmp_dir}/Reference_creation/Sorted/{{sample}}.sorted.fa",  tmp_dir=config["tmp_dir"])
     output:
-        dereplicated=temp(expand("{dereplicated_dir}/{{sample}}.dereplicated.fa",  dereplicated_dir=config["dereplicated_dir"]))
+        dereplicated=temp(expand("{tmp_dir}/Reference_creation/Dereplicated/{{sample}}.dereplicated.fa",  tmp_dir=config["tmp_dir"]))
     log: 
-        "../Logs/Reference_creation/derep_monos_{sample}.log"
+        expand("{output_dir}/Logs/Reference_creation/derep_monos_{{sample}}/log",  output_dir=config["output_dir"])
     benchmark:
-        "../Benchmarks/derep_monos_{sample}.benchmark.tsv"
+       "../Benchmarks/derep_monos_{sample}/benchmark.tsv"
     conda: 
         "../Envs/derep_monos.yaml"
     threads:
@@ -231,13 +231,13 @@ rule resort_monos:
     params:
         sample='{sample}'
     input:
-        dereplicated=expand("{dereplicated_dir}/{{sample}}.dereplicated.fa", dereplicated_dir=config["dereplicated_dir"])
+        dereplicated=expand("{tmp_dir}/Reference_creation/Dereplicated/{{sample}}.dereplicated.fa", tmp_dir=config["tmp_dir"])
     output:
-        sorted=temp(expand("{sortedmono_dir}/{{sample}}.resorted.fa", sortedmono_dir=config["sortedmono_dir"]))
+        sorted=temp(expand("{tmp_dir}/Reference_creation/Sorted/{{sample}}.resorted.fa", tmp_dir=config["tmp_dir"]))
     log: 
-        "../Logs/Reference_creation/resort_monos_{sample}.log"
+        expand("{output_dir}/Logs/Reference_creation/resort_monos_{{sample}}/log",  output_dir=config["output_dir"])
     benchmark:
-        "../Benchmarks/resort_monos_{sample}.benchmark.tsv"
+       "../Benchmarks/resort_monos_{sample}/benchmark.tsv"
     conda: 
         "../Envs/sort.yaml"
     threads:
@@ -261,13 +261,13 @@ rule cluster:
     params:
         sample='{sample}',
     input:
-        sorted=expand("{sortedmono_dir}/{{sample}}.resorted.fa", sortedmono_dir=config["sortedmono_dir"])
+        sorted=expand("{tmp_dir}/Reference_creation/Sorted/{{sample}}.resorted.fa", tmp_dir=config["tmp_dir"])
     output:
-        clustered=temp(expand("{clustered_dir}/{{sample}}.clustered.fa", clustered_dir=config["clustered_dir"]))
+        clustered=temp(expand("{tmp_dir}/Reference_creation/Clustered/{{sample}}.clustered.fa", tmp_dir=config["tmp_dir"]))
     log: 
-        "../Logs/Reference_creation/cluster_{sample}.log"
+        expand("{output_dir}/Logs/Reference_creation/cluster_{{sample}}/log",  output_dir=config["output_dir"])
     benchmark:
-        "../Benchmarks/cluster_{sample}.benchmark.tsv"
+       "../Benchmarks/cluster_{sample}/benchmark.tsv"
     conda: 
         "../Envs/cluster.yaml"
     threads: 
@@ -295,12 +295,12 @@ rule rename_fast:
     params:
         sample='{sample}'
     input:
-        clustered=expand("{clustered_dir}/{{sample}}.clustered.fa", clustered_dir=config["clustered_dir"])
+        clustered=expand("{tmp_dir}/Reference_creation/Clustered/{{sample}}.clustered.fa", tmp_dir=config["tmp_dir"])
     output:
-        renamed=temp(expand("{renamedmono_dir}/{{sample}}.renamed.fa", renamedmono_dir=config["renamedmono_dir"]))
+        renamed=temp(expand("{tmp_dir}/Reference_creation/Renamed/{{sample}}.renamed.fa", tmp_dir=config["tmp_dir"]))
     #log: NULL
     benchmark:
-        "../Benchmarks/rename_fast_{sample}.benchmark.tsv"
+       "../Benchmarks/rename_fast_{sample}/benchmark.tsv"
     #conda: NULL
     #threads: NULL
     shell: 
@@ -344,14 +344,14 @@ rule rename_fast:
 # Output:   - A de-novo meta reference file containing all dereplicated & clustered mono-reads.
 rule ref_out:
     params:
-        inputprefix=expand("{renamedmono_dir}/",  renamedmono_dir=config["renamedmono_dir"])
+        inputprefix=expand("{tmp_dir}/Reference_creation/Renamed/",  tmp_dir=config["tmp_dir"])
     input:
-        renamed=expand("{renamedmono_dir}/{sample}.renamed.fa", renamedmono_dir=config["renamedmono_dir"], sample=MONOS)
+        renamed=expand("{tmp_dir}/Reference_creation/Renamed/{sample}.renamed.fa", tmp_dir=config["tmp_dir"], sample=MONOS)
     output:
-        ref=expand("{ref_dir}/ref.fa", ref_dir=config["ref_dir"])
+        ref=expand("{output_dir}/Reference_creation/ref.fa", output_dir=config["output_dir"])
     #log: NULL
     benchmark:
-        "../Benchmarks/ref_out.benchmark.tsv"
+       "../Benchmarks/ref_out.benchmark.tsv"
     #conda: NULL
     #threads: NULL
     shell:

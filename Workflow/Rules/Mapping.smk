@@ -17,16 +17,16 @@
 # Output:   - An undisclosed number of index files, depending on reference size.
 rule mapping_Bowtie2_index:
     params: 
-        indexprefix=expand("{map_index_dir}/Bowtie/index", map_index_dir=config["map_index_dir"])
+        indexprefix=expand("{output_dir}/Mapping/Index/Bowtie/index", output_dir=config["output_dir"])
     input: 
-        refblasted=expand("{blasting_out}/Eukaryota_ref.fa",blasting_out=config["blasting_out"])
+        refblasted=ref
     output:
-        index=expand("{map_index_dir}/Bowtie/index.1.bt2", map_index_dir=config["map_index_dir"])
+        index=expand("{output_dir}/Mapping/Index/Bowtie/index.1.bt2", output_dir=config["output_dir"])
     log:
-        out="../Logs/Mapping/mapping_bowtie2_index.out.log", 
-        err="../Logs/Mapping/mapping_bowtie2_index.err.log"
+        out=expand("{output_dir}/Logs/Mapping/mapping_bowtie2_index.out.log",output_dir=config["output_dir"]), 
+        err=expand("{output_dir}/Logs/Mapping/mapping_bowtie2_index.err.log",output_dir=config["output_dir"])
     benchmark:
-        "../Benchmarks/mapping_Bowtie2_index.benchmark.tsv"
+       "../Benchmarks/mapping_Bowtie2_index.benchmark.tsv"
     conda: 
         "../Envs/bowtie2.yaml"
     threads: 
@@ -58,19 +58,19 @@ rule mapping_Bowtie2:
     params:
         sample='{sample}',
         multimap=config["multimap_bowtie"],
-        indexprefix=expand("{map_index_dir}/Bowtie/index", map_index_dir=config["map_index_dir"])
+        indexprefix=expand("{output_dir}/Mapping/Index/Bowtie/index", output_dir=config["output_dir"])
     input:
-        index=expand("{map_index_dir}/Bowtie/index.1.bt2", map_index_dir=config["map_index_dir"]),
-        r1=expand("{readgrouped_dir}/{{sample}}.1.fq.gz",readgrouped_dir=config["readgrouped_dir"]),
-        r2=expand("{readgrouped_dir}/{{sample}}.1.fq.gz",readgrouped_dir=config["readgrouped_dir"])
+        index=expand("{output_dir}/Mapping/Index/Bowtie/index.1.bt2", output_dir=config["output_dir"]),
+        r1=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.1.fq.gz",output_dir=config["output_dir"]),
+        r2=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.1.fq.gz",output_dir=config["output_dir"])
     output:
-        samOut=temp(expand("{sam_dir}/Bowtie/mapping_sq_{{sample}}.sam",sam_dir=config["sam_dir"])),
-        bamOut=temp(expand("{bam_dir}/Bowtie/mapping_sq_{{sample}}.bam",bam_dir=config["bam_dir"]))
+        samOut=temp(expand("{tmp_dir}/Mapping/Samout/Bowtie/mapping_sq_{{sample}}.sam",tmp_dir=config["tmp_dir"])),
+        bamOut=temp(expand("{tmp_dir}/Mapping/Bamout/Bowtie/mapping_sq_{{sample}}.bam",tmp_dir=config["tmp_dir"]))
     log: 
-        bowtie2="../Logs/Mapping/mapping_bowtie2_{sample}_bt.log",
-        samtools="../Logs/Mapping/mapping_bowtie2_{sample}_st.log"
+        bowtie2=expand("{output_dir}/Logs/Mapping/mapping_bowtie2_{{sample}}_bt.log",output_dir=config["output_dir"]),
+        samtools=expand("{output_dir}/Logs/Mapping/mapping_bowtie2_{{sample}}_st.log",output_dir=config["output_dir"])
     benchmark:
-        "../Benchmarks/mapping_Bowtie2_{sample}.benchmark.tsv"
+       "../Benchmarks/mapping_Bowtie2_{sample}.benchmark.tsv"
     conda: 
         "../Envs/bowtie2.yaml"
     threads: 
@@ -103,15 +103,15 @@ rule mapping_Bowtie2:
 # Output:   - An undisclosed number of index files, depending on reference size.
 rule mapping_bwa_index:
     params: 
-        indexprefix=expand("{map_index_dir}/Bwa", map_index_dir=config["map_index_dir"])
+        indexprefix=expand("{output_dir}/Mapping/Index/Bwa", output_dir=config["output_dir"])
     input: 
-        refblasted=expand("{blasting_out}/Eukaryota_ref.fa",blasting_out=config["blasting_out"])
+        refblasted=ref
     output:
-        index=expand("{map_index_dir}/Bwa/index.amb", map_index_dir=config["map_index_dir"])
+        index=expand("{output_dir}/Mapping/Index/Bwa/index.amb", output_dir=config["output_dir"])
     log: 
-        "../Logs/Mapping/mapping_bwa_index.log"
+        expand("{output_dir}/Logs/Mapping/mapping_bwa_index.log",output_dir=config["output_dir"])
     benchmark:
-        "../Benchmarks/mapping_BWA_index.benchmark.tsv"
+       "../Benchmarks/mapping_BWA_index.benchmark.tsv"
     conda: 
         "../Envs/bwa.yaml"
     threads: 
@@ -141,19 +141,19 @@ rule mapping_BWA:
     params:
         sample='{sample}',
         multimap=config["multimap_bwa"],
-        indexprefix=expand("{map_index_dir}/Bwa/index", map_index_dir=config["map_index_dir"])
+        indexprefix=expand("{output_dir}/Mapping/Index/Bwa/index", output_dir=config["output_dir"])
     input:
-        index=expand("{map_index_dir}/Bwa/index.amb", map_index_dir=config["map_index_dir"]),
-        r1=expand("{readgrouped_dir}/{{sample}}.1.fq.gz",readgrouped_dir=config["readgrouped_dir"]),
-        r2=expand("{readgrouped_dir}/{{sample}}.1.fq.gz",readgrouped_dir=config["readgrouped_dir"])
+        index=expand("{output_dir}/Mapping/Index/Bwa/index.amb", output_dir=config["output_dir"]),
+        r1=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.1.fq.gz",output_dir=config["output_dir"]),
+        r2=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.1.fq.gz",output_dir=config["output_dir"])
     output:
-        samOut=temp(expand("{sam_dir}/Bwa/mapping_sq_{{sample}}.sam",sam_dir=config["sam_dir"])),
-        bamOut=temp(expand("{bam_dir}/Bwa/mapping_sq_{{sample}}.bam",bam_dir=config["bam_dir"]))
+        samOut=temp(expand("{tmp_dir}/Mapping/Samout/Bwa/mapping_sq_{{sample}}.sam",tmp_dir=config["tmp_dir"])),
+        bamOut=temp(expand("{tmp_dir}/Mapping/Bamout/Bwa/mapping_sq_{{sample}}.bam",tmp_dir=config["tmp_dir"]))
     log: 
-        bwa="../Logs/Mapping/mapping_bwa_{sample}_bw.log",
-        samtools="../Logs/Mapping/mapping_bwa_{sample}_st.log"
+        bwa=expand("{output_dir}/Logs/Mapping/mapping_bwa_{{sample}}_bw.log",output_dir=config["output_dir"]),
+        samtools=expand("{output_dir}/Logs/Mapping/mapping_bwa_{{sample}}_st.log",output_dir=config["output_dir"])
     benchmark:
-        "../Benchmarks/mapping_BWA_{sample}.benchmark.tsv"
+       "../Benchmarks/mapping_BWA_{sample}.benchmark.tsv"
     conda: 
         "../Envs/bwa.yaml"
     threads: 
@@ -183,17 +183,17 @@ rule mapping_BWA:
 # Output:   - An undisclosed number of index files, depending on reference size.
 rule mapping_star_index:
     params:
-        indexprefix=expand("{map_index_dir}/Star", map_index_dir=config["map_index_dir"]),
+        indexprefix=expand("{output_dir}/Mapping/Index/Star", output_dir=config["output_dir"]),
         indextemp=expand("../Misc/Mapping/Indexed/Star"),
         ram=config["star_ram"]
     input:
-        refblasted=expand("{blasting_out}/Eukaryota_ref.fa",blasting_out=config["blasting_out"])
+        refblasted=ref
     output:
-        genome=expand("{map_index_dir}/Star/Genome" , map_index_dir=config["map_index_dir"])
+        genome=expand("{output_dir}/Mapping/Index/Star/Genome" , output_dir=config["output_dir"])
     log: 
-        "../Logs/Mapping/mapping_star_index.log"
+        expand("{output_dir}/Logs/Mapping/mapping_star_index.log",output_dir=config["output_dir"])
     benchmark: 
-        "../Benchmarks/mapping_star_index.benchmark.tsv"
+       "../Benchmarks/mapping_star_index.benchmark.tsv"
     conda: 
         "../Envs/star.yaml"
     threads: 
@@ -225,21 +225,21 @@ rule mapping_star_index:
 rule mapping_Star:
     params:
         sample='{sample}',
-        indexprefix=expand("{map_index_dir}/Star", map_index_dir=config["map_index_dir"]),
-        r1out=expand("{readgrouped_dir}/{{sample}}.1.fq",readgrouped_dir=config["readgrouped_dir"]),
-        r2out=expand("{readgrouped_dir}/{{sample}}.2.fq",readgrouped_dir=config["readgrouped_dir"])
+        indexprefix=expand("{output_dir}/Mapping/Index/Star", output_dir=config["output_dir"]),
+        r1out=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.1.fq",output_dir=config["output_dir"]),
+        r2out=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.2.fq",output_dir=config["output_dir"])
     input:
-        genome=expand("{map_index_dir}/Star/Genome" , map_index_dir=config["map_index_dir"]),
-        r1=expand("{readgrouped_dir}/{{sample}}.1.fq.gz",readgrouped_dir=config["readgrouped_dir"]),
-        r2=expand("{readgrouped_dir}/{{sample}}.2.fq.gz",readgrouped_dir=config["readgrouped_dir"])
+        genome=expand("{output_dir}/Mapping/Index/Star/Genome" , output_dir=config["output_dir"]),
+        r1=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.1.fq.gz",output_dir=config["output_dir"]),
+        r2=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.2.fq.gz",output_dir=config["output_dir"])
     output:        
-        samOut=temp(expand("{sam_dir}/Star/mapping_sq_{{sample}}.sam",sam_dir=config["sam_dir"])),
-        bamOut=temp(expand("{bam_dir}/Star/mapping_sq_{{sample}}.bam",bam_dir=config["bam_dir"]))
+        samOut=temp(expand("{tmp_dir}/Mapping/Samout/Star/mapping_sq_{{sample}}.sam",tmp_dir=config["tmp_dir"])),
+        bamOut=temp(expand("{tmp_dir}/Mapping/Bamout/Star/mapping_sq_{{sample}}.bam",tmp_dir=config["tmp_dir"]))
     log: 
-        star="../Logs/Mapping/mapping_star_{sample}_st.log",
-        samtools="../Logs/Mapping/mapping_star_{sample}_st.log"
+        star=expand("{output_dir}/Logs/Mapping/mapping_star_{{sample}}_st.log",output_dir=config["output_dir"]),
+        samtools=expand("{output_dir}/Logs/Mapping/mapping_star_{{sample}}_st.log",output_dir=config["output_dir"])
     benchmark: 
-        "../Benchmarks/mapping_star_{sample}.benchmark.tsv"
+       "../Benchmarks/mapping_star_{sample}.benchmark.tsv"
     conda: 
         "../Envs/star.yaml"
     threads: 
