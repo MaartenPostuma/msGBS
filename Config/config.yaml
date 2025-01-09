@@ -7,11 +7,11 @@ barcode_file: "barcodes.tsv"
 input_dir     : "../../../../vol/ribesecology/jelle"
 # To change the multimap, edit the number after k or c, depending on which mapper(s) should be used. If multimapping should 
 # be turned off, this should be an empty string.
-multimap_bowtie : "-k 10"
-multimap_bwa    : "-c 10"
+multimap_bowtie : ""
+multimap_bwa    : ""
 # In case the STAR mapper is to be used, set the value below to whatever value feels like a sufficient value  for RAM usage in bits.
 # A value too low tends to break the entire thing currently, so better to overshoot than to undershooot. The default value should be enough.
-star_ram        : 1600000000000
+star_ram        : 665000000000
 # In case the adapters that should be used are different than the ones defined below, 
 # change them to the correct adapters.
 adapter1: "ATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT" 
