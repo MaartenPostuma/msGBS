@@ -20,13 +20,13 @@ rule bam_rg:
         sample='{sample}', 
         mapper=MAPPER
     input:
-        bamIn=expand("{bam_dir}/{{mapper}}/mapping_sq_{{sample}}.bam",bam_dir=config["bam_dir"])
+        bamIn=expand("{tmp_dir}/Mapping/Bamout/{{mapper}}/mapping_sq_{{sample}}.bam",tmp_dir=config["tmp_dir"])
     output:
-        bamOut=expand("{bam_dir}/{{mapper}}/mapping_rg_{{sample}}.bam",bam_dir=config["bam_dir"])
+        bamOut=expand("{output_dir}/Mapping/Bamout/{{mapper}}/mapping_rg_{{sample}}.bam",output_dir=config["output_dir"])
     log: 
-        "../Logs/Analysis/bam_rg_{sample}_{mapper}.log"
+        expand("{output_dir}/Logs/Analysis/bam_rg_{{sample}}_{{mapper}}.log",output_dir=config["output_dir"])
     benchmark: 
-        "../Benchmarks/bam_rg_{sample}_{mapper}.benchmark.tsv"
+       "../Benchmarks/bam_rg_{sample}_{mapper}.benchmark.tsv"
     conda:
         "../Envs/bam_rg.yaml"
     #threads: NULL
@@ -53,13 +53,13 @@ rule bam_merge:
     params: 
         mapper=MAPPER
     input: 
-        bamIn=expand("{bam_dir}/{{mapper}}/mapping_rg_{sample}.bam",bam_dir=config["bam_dir"], sample=SAMPLES)
+        bamIn=expand("{output_dir}/Mapping/Bamout/{{mapper}}/mapping_rg_{sample}.bam",output_dir=config["output_dir"], sample=SAMPLES)
     output:
-        bamOut=expand("{analysis_out}/{{mapper}}/mapping_merged.bam",analysis_out=config["analysis_out"])
+        bamOut=expand("{output_dir}/Analysis/{{mapper}}/mapping_merged.bam",output_dir=config["output_dir"])
     log: 
-        "../Logs/Analysis/bam_merge_{mapper}.log"
+        expand("{output_dir}/Logs/Analysis/bam_merge_{{mapper}}.log",output_dir=config["output_dir"])
     benchmark: 
-        "../Benchmarks/bam_merge_{mapper}.benchmark.tsv"
+       "../Benchmarks/bam_merge_{mapper}.benchmark.tsv"
     conda: 
         "../Envs/bam_merge.yaml"
     #threads: NULL
@@ -81,14 +81,14 @@ rule stats:
     params:
         mapper=MAPPER
     input:
-        bamIn=expand("{analysis_out}/{{mapper}}/mapping_merged.bam",analysis_out=config["analysis_out"])
+        bamIn=expand("{output_dir}/{{mapper}}/mapping_merged.bam",output_dir=config["output_dir"])
     output:
-        statscsv=expand("{analysis_out}/{{mapper}}/stats.csv",analysis_out=config["analysis_out"])
+        statscsv=expand("{output_dir}/{{mapper}}/stats.csv",output_dir=config["output_dir"])
     log: 
-        out="../Logs/Analysis/stats_{mapper}.out.log",
-        err="../Logs/Analysis/stats_{mapper}.err.log"
+        out= expand("{output_dir}/Logs/Analysis/stats_{{mapper}}.out.log",output_dir=config["output_dir"]),
+        err= expand("{output_dir}/Logs/Analysis/stats_{{mapper}}.err.log",output_dir=config["output_dir"])
     benchmark:
-        "../Benchmarks/stats_{mapper}.benchmark.tsv"
+       "../Benchmarks/stats_{mapper}.benchmark.tsv"
     conda: 
         "../Envs/stats.yaml"
     #threads: NULL
@@ -113,21 +113,21 @@ rule stats:
 rule filter:
     params: 
         mapper=MAPPER,
-        outprefix=expand("{analysis_out}/{{mapper}}/",analysis_out=config["analysis_out"])
+        outprefix=expand("{output_dir}/{{mapper}}/",output_dir=config["output_dir"])
     input: 
-        statscsv=expand("{analysis_out}/{{mapper}}/stats.csv",analysis_out=config["analysis_out"])
+        statscsv=expand("{output_dir}/{{mapper}}/stats.csv",output_dir=config["output_dir"])
     output:
-        Data1=expand("{analysis_out}/{{mapper}}/Data_1_Clusters_Target_vs_Reason_to_remove_8_15_1000_summed_per_species.txt", analysis_out=config["analysis_out"]),
-        Data2=expand("{analysis_out}/{{mapper}}/Data_2_Clusters_filtered_due_to_homology_to_8_15_1000.txt", analysis_out=config["analysis_out"]),
-        Data3=expand("{analysis_out}/{{mapper}}/Data_3_READ_COUNT_removed_CLUSTERS_SUM_8_15_1000.csv", analysis_out=config["analysis_out"]),
-        Data4=expand("{analysis_out}/{{mapper}}/Data_4_SUM_8_15_1000.csv", analysis_out=config["analysis_out"]),
-        Data5=expand("{analysis_out}/{{mapper}}/Data_5_SUM_MINREAD_FILTER_8_15_1000.csv", analysis_out=config["analysis_out"])
+        Data1=expand("{output_dir}/{{mapper}}/Data_1_Clusters_Target_vs_Reason_to_remove_8_15_1000_summed_per_species.txt", output_dir=config["output_dir"]),
+        Data2=expand("{output_dir}/{{mapper}}/Data_2_Clusters_filtered_due_to_homology_to_8_15_1000.txt", output_dir=config["output_dir"]),
+        Data3=expand("{output_dir}/{{mapper}}/Data_3_READ_COUNT_removed_CLUSTERS_SUM_8_15_1000.csv", output_dir=config["output_dir"]),
+        Data4=expand("{output_dir}/{{mapper}}/Data_4_SUM_8_15_1000.csv", output_dir=config["output_dir"]),
+        Data5=expand("{output_dir}/{{mapper}}/Data_5_SUM_MINREAD_FILTER_8_15_1000.csv", output_dir=config["output_dir"])
     log: 
-        out="../Logs/Analysis/filter_{mapper}.out.log", 
-        err="../Logs/Analysis/filter_{mapper}.err.log",
-        log="../Logs/Analysis/filter_{mapper}.log.log"
+        out= expand("{output_dir}/Logs/Analysis/filter_{{mapper}}.out.log",output_dir=config["output_dir"]), 
+        err= expand("{output_dir}/Logs/Analysis/filter_{{mapper}}.err.log",output_dir=config["output_dir"]),
+        log= expand("{output_dir}/Logs/Analysis/filter_{{mapper}}.log.log",output_dir=config["output_dir"])
     benchmark:
-        "../Benchmarks/filter_{mapper}.benchmark.tsv"
+       "../Benchmarks/filter_{mapper}.benchmark.tsv"
     conda: "../Envs/filter.yaml"
     #threads: NULL
     shell:
@@ -156,20 +156,20 @@ rule filter:
 #             of the log folder at the time of executing the command. 
 rule logging:
     params:
-        logdir=config["log_dir"]
+        logdir=expand("{output_dir}/Logs/", output_dir=config["output_dir"])
     input:
-        Data1=expand("{analysis_out}/{mapper}/Data_1_Clusters_Target_vs_Reason_to_remove_8_15_1000_summed_per_species.txt", analysis_out=config["analysis_out"], mapper=MAPPER),
-        Data2=expand("{analysis_out}/{mapper}/Data_2_Clusters_filtered_due_to_homology_to_8_15_1000.txt", analysis_out=config["analysis_out"], mapper=MAPPER),
-        Data3=expand("{analysis_out}/{mapper}/Data_3_READ_COUNT_removed_CLUSTERS_SUM_8_15_1000.csv", analysis_out=config["analysis_out"], mapper=MAPPER),
-        Data4=expand("{analysis_out}/{mapper}/Data_4_SUM_8_15_1000.csv", analysis_out=config["analysis_out"], mapper=MAPPER),
-        Data5=expand("{analysis_out}/{mapper}/Data_5_SUM_MINREAD_FILTER_8_15_1000.csv", analysis_out=config["analysis_out"], mapper=MAPPER)
+        Data1=expand("{output_dir}/Analysis/{mapper}/Data_1_Clusters_Target_vs_Reason_to_remove_8_15_1000_summed_per_species.txt", output_dir=config["output_dir"], mapper=MAPPER),
+        Data2=expand("{output_dir}/Analysis/{mapper}/Data_2_Clusters_filtered_due_to_homology_to_8_15_1000.txt", output_dir=config["output_dir"], mapper=MAPPER),
+        Data3=expand("{output_dir}/Analysis/{mapper}/Data_3_READ_COUNT_removed_CLUSTERS_SUM_8_15_1000.csv", output_dir=config["output_dir"], mapper=MAPPER),
+        Data4=expand("{output_dir}/Analysis/{mapper}/Data_4_SUM_8_15_1000.csv", output_dir=config["output_dir"], mapper=MAPPER),
+        Data5=expand("{output_dir}/Analysis/{mapper}/Data_5_SUM_MINREAD_FILTER_8_15_1000.csv", output_dir=config["output_dir"], mapper=MAPPER)
     output:
-        alllogs=expand("{logsummary_dir}/multiQClogsummary.html", logsummary_dir=config["logsummary_dir"])
+        alllogs=expand("{output_dir}/logSummary/multiQClogsummary.html", output_dir=config["output_dir"])
     log:
-        out="../Logs/Analysis/logging.out.log",
-        err="../Logs/Analysis/logging.err.log"
+        out= expand("{output_dir}/Logs/Analysis/logging.out.log",output_dir=config["output_dir"]),
+        err= expand("{output_dir}/Logs/Analysis/logging.err.log",output_dir=config["output_dir"])
     benchmark:
-        "../Benchmarks/logging.benchmark.tsv"
+       "../Benchmarks/logging.benchmark.tsv"
     conda:
         "../Envs/logging.yaml"
     #threads: NULL

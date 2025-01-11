@@ -25,14 +25,14 @@ rule deduplicate_trim:
         reads1=expand("{input}/{{run}}_R1.fq.gz",input=config["input_dir"]),
         reads2=expand("{input}/{{run}}_R2.fq.gz",input=config["input_dir"])
     output:
-        filtered1=temp(expand("{deduplicated_dir}/{{run}}_R1.fq.gz", deduplicated_dir=config["deduplicated_dir"])),
-        filtered2=temp(expand("{deduplicated_dir}/{{run}}_R2.fq.gz", deduplicated_dir=config["deduplicated_dir"])),
-        fastp_html=expand("{fastpfiles_dir}/{{run}}Preprocessing.html", fastpfiles_dir=config["fastpfiles_dir"]),
-        fastp_json=expand("{fastpfiles_dir}/{{run}}Preprocessing.json", fastpfiles_dir=config["fastpfiles_dir"])
+        filtered1=temp(expand("{tmp_dir}/Preprocessing/Deduplicated/{{run}}_R1.fq.gz", tmp_dir=config["tmp_dir"])),
+        filtered2=temp(expand("{tmp_dir}/Preprocessing/Deduplicated/{{run}}_R2.fq.gz", tmp_dir=config["tmp_dir"])),
+        fastp_html=expand("{output_dir}/Preprocessing/Fastpreports/{{run}}Preprocessing.html", output_dir=config["output_dir"]),
+        fastp_json=expand("{output_dir}/Preprocessing/Fastpreports/{{run}}Preprocessing.json", output_dir=config["output_dir"])
     log: 
-        "../Logs/Preprocessing/deduplicate_trim_{run}.log"
+        expand("{output_dir}/Logs/Preprocessing/deduplicate_trim_{{run}}.log", output_dir=config["output_dir"])
     benchmark: 
-        "../Benchmarks/deduplicate_trim.benchmark_{run}.tsv"
+       "../Benchmarks/deduplicate_trim.benchmark_{run}.tsv"
     conda: 
         "../Envs/deduplication.yaml"
     threads: 
@@ -83,18 +83,18 @@ rule split_barcodes_demultiplex:
         readfile_R1=config["readfile_R1"],
         readfile_R2=config["readfile_R2"],
         sample=config["sample"],
-        readdir=directory(expand("{demultiplexed_dir}", demultiplexed_dir=config["demultiplexed_dir"]))
+        readdir=directory(expand("{tmp_dir}/Preprocessing/Demultiplexed", tmp_dir=config["tmp_dir"]))
     input:
         barcodefile=expand("{input}/{barcodes}", input=config["input_dir"], barcodes=config["barcode_file"]),
-        filtered1=expand("{deduplicated_dir}/{{run}}_R1.fq.gz", deduplicated_dir=config["deduplicated_dir"]),
-        filtered2=expand("{deduplicated_dir}/{{run}}_R2.fq.gz", deduplicated_dir=config["deduplicated_dir"])
+        filtered1=expand("{tmp_dir}/Preprocessing/Deduplicated/{{run}}_R1.fq.gz", tmp_dir=config["tmp_dir"]),
+        filtered2=expand("{tmp_dir}/Preprocessing/Deduplicated/{{run}}_R2.fq.gz", tmp_dir=config["tmp_dir"])
     output:
-        barcodefilefiltered=expand("{barcodes_dir}/{{run}}_{barcodesfiltered}", barcodes_dir=config["barcodes_dir"], barcodesfiltered=config["barcodefiltered_file"]),
-        tmpdir=temp(directory(expand("{demultiplexed_dir}/{{run}}", demultiplexed_dir=config["demultiplexed_dir"])))
+        barcodefilefiltered=expand("{output_dir}/Preprocessing/Barcodesfiltered/{{run}}_barcodefiltered.tsv", output_dir=config["output_dir"]),
+        tmpdir=temp(directory(expand("{tmp_dir}/Preprocessing/Demultiplexed/{{run}}", tmp_dir=config["tmp_dir"])))
     log: 
-        "../Logs/Preprocessing/split_barcode_file_{run}.log"
+        expand("{output_dir}/Logs/Preprocessing/split_barcode_file_{{run}}.log", output_dir=config["output_dir"])
     benchmark: 
-        "../Benchmarks/split_barcode_file.benchmark_{run}.tsv"
+       "../Benchmarks/split_barcode_file.benchmark_{run}.tsv"
     conda: 
         "../Envs/deduplication.yaml"
     threads: 
@@ -173,22 +173,22 @@ rule rename_samples:
     params:
         lambda w: {SAMPLES[w.sample]}, 
         readfile="{readfile}",
-        demultiplexed_dir=config["demultiplexed_dir"],
-        renamedunzipped=expand("{renamed_dir}/{{sample}}.{{readfile}}.fq", renamed_dir=config["renamed_dir"], sample=SAMPLES, readfile=readfile)
+        tmp_dir=config["tmp_dir"],
+        renamedunzipped=expand("{tmp_dir}/Preprocessing/Renamed/{{sample}}.{{readfile}}.fq", tmp_dir=config["tmp_dir"], sample=SAMPLES, readfile=readfile)
     input:
-        tmpdir=expand("{demultiplexed_dir}/{run}", demultiplexed_dir=config["demultiplexed_dir"], run=RUN)
+        tmpdir=expand("{tmp_dir}/Preprocessing/Demultiplexed/{run}", tmp_dir=config["tmp_dir"], run=RUN)
     output:
-        renamed=temp(expand("{renamed_dir}/{{sample}}.{{readfile}}.fq.gz", renamed_dir=config["renamed_dir"], sample=SAMPLES, readfile=readfile))
+        renamed=temp(expand("{tmp_dir}/Preprocessing/Renamed/{{sample}}.{{readfile}}.fq.gz", tmp_dir=config["tmp_dir"], sample=SAMPLES, readfile=readfile))
     log:
-        "../Logs/Preprocessing/rename_samples_{sample}_{readfile}.log"
+        expand("{output_dir}/Logs/Preprocessing/rename_samples_{{sample}}_{{readfile}}.log", output_dir=config["output_dir"])
     benchmark: 
-        "../Benchmarks/rename_samples_{sample}_{readfile}.benchmark.tsv"
+       "../Benchmarks/rename_samples_{sample}_{readfile}.benchmark.tsv"
     #conda: NULL
     threads:
         1
     shell:
         """
-        zcat {params.demultiplexed_dir}/*/{wildcards.sample}.{params.readfile}.fq.gz > {params.renamedunzipped} 2> {log}
+        zcat {params.tmp_dir}/Preprocessing/Demultiplexed/*/{wildcards.sample}.{params.readfile}.fq.gz > {params.renamedunzipped} 2> {log}
         gzip {params.renamedunzipped} 2> {log}
         """
 
@@ -204,12 +204,12 @@ rule readgroup_headers:
         flowcell=flowCell,
         lane=lane
     input:
-        read=expand("{renamed_dir}/{{sample}}.{{readfile}}.fq.gz",renamed_dir=config["renamed_dir"])
+        read=expand("{tmp_dir}/Preprocessing/Renamed/{{sample}}.{{readfile}}.fq.gz",tmp_dir=config["tmp_dir"])
     output:
-        readgrouped=temp(expand("{readgrouped_dir}/{{sample}}.{{readfile}}.fq.gz",readgrouped_dir=config["readgrouped_dir"]))
+        readgrouped=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.{{readfile}}.fq.gz",output_dir=config["output_dir"])
     #log: NULL
     benchmark: 
-        "../Benchmarks/headers_{sample}_{readfile}.benchmark.tsv"
+       "../Benchmarks/headers_{sample}_{readfile}.benchmark.tsv"
     #conda: NULL
     threads: 
         8
@@ -233,21 +233,21 @@ rule readgroup_headers:
 rule cat_all_preprocessed:
     params:
         readfile="{readfile}",
-        readgrouped_dir=expand("{readgrouped_dir}/", readgrouped_dir=config["readgrouped_dir"])
+        tmp_dir=expand("{tmp_dir}/Preprocessing/Readgrouped/", tmp_dir=config["tmp_dir"])
     input:
-        readgroupedsample=expand("{readgrouped_dir}/{sample}.{{readfile}}.fq.gz",readgrouped_dir=config["readgrouped_dir"], sample=SAMPLES)
+        readgroupedsample=expand("{tmp_dir}/Preprocessing/Readgrouped/{sample}.{{readfile}}.fq.gz",tmp_dir=config["tmp_dir"], sample=SAMPLES)
     output:
-        allpreprocessed=expand("{allpreprocessed_dir}/preprocessed_R{{readfile}}.fq.gz",  allpreprocessed_dir=config["allpreprocessed_dir"])
+        allpreprocessed=expand("{output_dir}/Output/Preprocessing/Preprocessed/preprocessed_R{{readfile}}.fq.gz",  output_dir=config["output_dir"])
     log: 
-        "../Logs/Preprocessing/cat_{readfile}.log"
+        expand("{output_dir}/Logs/Preprocessing/cat_{{readfile}}.log", output_dir=config["output_dir"])
     benchmark: 
-        "../Benchmarks/cat_{readfile}.benchmark.tsv"
+       "../Benchmarks/cat_{readfile}.benchmark.tsv"
     #conda: NULL
     threads: 
         1
     shell:
         """
-        ls -v {params.readgrouped_dir}*.{params.readfile}.fq.gz | 
+        ls -v {params.tmp_dir}*.{params.readfile}.fq.gz | 
         xargs cat  >> {output.allpreprocessed}
         """
 
@@ -257,17 +257,14 @@ rule cat_all_preprocessed:
 # Input:    - A preprocessed mono read-file.
 # Output:   - A preprocessed mono read-file, now copied to a different directory.
 rule move_monos: 
-    params:
-        readfile="{readfile}",
-        sample=SAMPLES
     input:
-        mono=expand("{readgrouped_dir}/{{sample}}.{{readfile}}.fq.gz",readgrouped_dir=config["readgrouped_dir"])
+        mono=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.{{readfile}}.fq.gz",output_dir=config["output_dir"])
     output:
-        movedmono=expand("{mono_dir}/{{sample}}.{{readfile}}.fq.gz", mono_dir=config["mono_dir"])
+        movedmono=expand("{output_dir}/Preprocessing/Preprocessedmonos/{{sample}}.{{readfile}}.fq.gz", output_dir=config["output_dir"])
     log: 
-        "../Logs/Preprocessing/move_monos_{sample}_{readfile}.log"
+        expand("{output_dir}/Logs/Preprocessing/move_monos_{{sample}}_{{readfile}}.log", output_dir=config["output_dir"])
     benchmark: 
-        "../Benchmarks/move_monos_{sample}_{readfile}.benchmark.tsv"
+       "../Benchmarks/move_monos_{sample}_{readfile}.benchmark.tsv"
     #conda: NULL
     threads: 
         1

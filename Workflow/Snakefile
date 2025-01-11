@@ -25,6 +25,11 @@ readfile  = [1, 2]
 grouped = df.groupby("run")["sample"].apply(set)
 LANESAMPLE = grouped.to_dict()
 
+if config["ref_mode"]=="Available":
+    ref=config["ref_loc"]
+else:
+    ref=expand("{output_dir}/Blasting/Eukaryota_ref.fa",output_dir=config["output_dir"])
+
 # -- define variables from the barcode dataframe.
 lane = df.Lane[0]
 flowCell = df.Flowcell[0]
@@ -50,13 +55,13 @@ include: "Rules/Analysis.smk"
 # -- define rule all, or essentially the output goal of this pipeline.
 rule all:
     input:
-        allpreprocessed=expand("{allpreprocessed_dir}/preprocessed_R{readfile}.fq.gz",  allpreprocessed_dir=config["allpreprocessed_dir"], readfile=readfile),
-        bamOut=expand("{bam_dir}/{mapper}/mapping_rg_{sample}.bam",bam_dir=config["bam_dir"], mapper=MAPPER, sample=SAMPLES),
-        bamMerged=expand("{analysis_out}/{mapper}/mapping_merged.bam",analysis_out=config["analysis_out"], mapper=MAPPER),
-        statscsv=expand("{analysis_out}/{mapper}/stats.csv",analysis_out=config["analysis_out"], mapper=MAPPER),
-        Data1=expand("{analysis_out}/{mapper}/Data_1_Clusters_Target_vs_Reason_to_remove_8_15_1000_summed_per_species.txt", analysis_out=config["analysis_out"], mapper=MAPPER),
-        Data2=expand("{analysis_out}/{mapper}/Data_2_Clusters_filtered_due_to_homology_to_8_15_1000.txt", analysis_out=config["analysis_out"], mapper=MAPPER),
-        Data3=expand("{analysis_out}/{mapper}/Data_3_READ_COUNT_removed_CLUSTERS_SUM_8_15_1000.csv", analysis_out=config["analysis_out"], mapper=MAPPER),
-        Data4=expand("{analysis_out}/{mapper}/Data_4_SUM_8_15_1000.csv", analysis_out=config["analysis_out"], mapper=MAPPER),
-        Data5=expand("{analysis_out}/{mapper}/Data_5_SUM_MINREAD_FILTER_8_15_1000.csv", analysis_out=config["analysis_out"], mapper=MAPPER),
-        alllogs=expand("{logsummary_dir}/multiQClogsummary.html", logsummary_dir=config["logsummary_dir"])
+        #allpreprocessed=expand("{allpreprocessed_dir}/preprocessed_R{readfile}.fq.gz",  allpreprocessed_dir=config["allpreprocessed_dir"], readfile=readfile),
+        #bamOut=expand("{tmp_dir}/Mapping/Bamout/{mapper}/mapping_rg_{sample}.bam",tmp_dir=config["tmp_dir"], mapper=MAPPER, sample=SAMPLES),
+        bamMerged=expand("{output_dir}/Analysis/{mapper}/mapping_merged.bam",output_dir=config["output_dir"], mapper=MAPPER),
+        statscsv=expand("{output_dir}/Analysis/{mapper}/stats.csv",output_dir=config["output_dir"], mapper=MAPPER),
+        Data1=expand("{output_dir}/Analysis/{mapper}/Data_1_Clusters_Target_vs_Reason_to_remove_8_15_1000_summed_per_species.txt", output_dir=config["output_dir"], mapper=MAPPER),
+        Data2=expand("{output_dir}/Analysis/{mapper}/Data_2_Clusters_filtered_due_to_homology_to_8_15_1000.txt", output_dir=config["output_dir"], mapper=MAPPER),
+        Data3=expand("{output_dir}/Analysis/{mapper}/Data_3_READ_COUNT_removed_CLUSTERS_SUM_8_15_1000.csv", output_dir=config["output_dir"], mapper=MAPPER),
+        Data4=expand("{output_dir}/Analysis/{mapper}/Data_4_SUM_8_15_1000.csv", output_dir=config["output_dir"], mapper=MAPPER),
+        Data5=expand("{output_dir}/Analysis/{mapper}/Data_5_SUM_MINREAD_FILTER_8_15_1000.csv", output_dir=config["output_dir"], mapper=MAPPER),
+        alllogs=expand("{output_dir}/logSummary/multiQClogsummary.html", output_dir=config["output_dir"])
