@@ -94,8 +94,6 @@ rule stats:
     #threads: NULL
     shell:
         """
-        echo 'Finished mapping with {params.mapper}'  >> time.txt 
-        date +%s%N >> time.txt 
         python Scripts/Stats.py \
             -i {input.bamIn} \
             -o {output.statscsv} \
@@ -121,6 +119,8 @@ rule merge_stats:
     #threads: NULL
     shell:
         """
+        echo 'Finished mapping with {params.mapper}'  >> time.txt 
+        date +%s%N >> time.txt 
         Rscript Scripts/combineStatsFiles.R {params.inDir} {output.statscsv} > {log.out}
         """
 
