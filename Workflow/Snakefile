@@ -56,8 +56,7 @@ include: "Rules/Analysis.smk"
 rule all:
     input:
         #allpreprocessed=expand("{allpreprocessed_dir}/preprocessed_R{readfile}.fq.gz",  allpreprocessed_dir=config["allpreprocessed_dir"], readfile=readfile),
-        #bamOut=expand("{tmp_dir}/Mapping/Bamout/{mapper}/mapping_rg_{sample}.bam",tmp_dir=config["tmp_dir"], mapper=MAPPER, sample=SAMPLES),
-        bamMerged=expand("{output_dir}/Analysis/{mapper}/mapping_merged.bam",output_dir=config["output_dir"], mapper=MAPPER),
+        #bamOut=expand("{output_dir}/Mapping/Bamout/{mapper}/mapping_rg_{sample}.bam",output_dir=config["output_dir"], mapper=MAPPER, sample=SAMPLES),
         statscsv=expand("{output_dir}/Analysis/{mapper}/stats.csv",output_dir=config["output_dir"], mapper=MAPPER),
         Data1=expand("{output_dir}/Analysis/{mapper}/Data_1_Clusters_Target_vs_Reason_to_remove_8_15_1000_summed_per_species.txt", output_dir=config["output_dir"], mapper=MAPPER),
         Data2=expand("{output_dir}/Analysis/{mapper}/Data_2_Clusters_filtered_due_to_homology_to_8_15_1000.txt", output_dir=config["output_dir"], mapper=MAPPER),

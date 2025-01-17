@@ -1,0 +1,9 @@
+name: R
+channels:
+  - bioconda
+  - conda-forge
+  - r
+dependencies:
+    - r-base=4.3.3
+    - conda-forge::r-purrr
+    - r::r-tidyverse

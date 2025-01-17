@@ -29,10 +29,10 @@ rule bam_rg:
        "../Benchmarks/bam_rg_{sample}_{mapper}.benchmark.tsv"
     conda:
         "../Envs/bam_rg.yaml"
-    #threads: NULL
+    threads: 4
     shell:
         """
-        picard AddOrReplaceReadGroups \
+        picard AddOrReplaceReadGroups -XX:ActiveProcessorCount={threads} -Xmx10g \
             I={input.bamIn} \
             O={output.bamOut} \
             RGLB={params.sample} \
@@ -49,26 +49,26 @@ rule bam_rg:
 # -----     
 # Input:    - Multiple readgrouped bam-files from one of the mappers.
 # Output:   - A single readgrouped bam-file from one of the mappers.
-rule bam_merge:
-    params: 
-        mapper=MAPPER
-    input: 
-        bamIn=expand("{output_dir}/Mapping/Bamout/{{mapper}}/mapping_rg_{sample}.bam",output_dir=config["output_dir"], sample=SAMPLES)
-    output:
-        bamOut=expand("{output_dir}/Analysis/{{mapper}}/mapping_merged.bam",output_dir=config["output_dir"])
-    log: 
-        expand("{output_dir}/Logs/Analysis/bam_merge_{{mapper}}.log",output_dir=config["output_dir"])
-    benchmark: 
-       "../Benchmarks/bam_merge_{mapper}.benchmark.tsv"
-    conda: 
-        "../Envs/bam_merge.yaml"
-    #threads: NULL
-    shell:
-        """
-        samtools merge - {input.bamIn} | 
-        samtools sort > {output.bamOut} \
-            2> {log}
-        """
+# rule bam_merge:
+#     params: 
+#         mapper=MAPPER
+#     input: 
+#         bamIn=expand("{output_dir}/Mapping/Bamout/{{mapper}}/mapping_rg_{sample}.bam",output_dir=config["output_dir"], sample=SAMPLES)
+#     output:
+#         bamOut=expand("{output_dir}/Analysis/{{mapper}}/mapping_merged.bam",output_dir=config["output_dir"])
+#     log: 
+#         expand("{output_dir}/Logs/Analysis/bam_merge_{{mapper}}.log",output_dir=config["output_dir"])
+#     benchmark: 
+#        "../Benchmarks/bam_merge_{mapper}.benchmark.tsv"
+#     conda: 
+#         "../Envs/bam_merge.yaml"
+#     #threads: NULL
+#     shell:
+#         """
+#         samtools merge - {input.bamIn} | 
+#         samtools sort > {output.bamOut} \
+#             2> {log}
+#         """
 
 # This rule essentially just calls a Python file that is able to analyze a readgrouped bam-file.
 # This file parses the bam-file, and moulds its contents into a human readable csv-file that
@@ -81,14 +81,14 @@ rule stats:
     params:
         mapper=MAPPER
     input:
-        bamIn=expand("{output_dir}/{{mapper}}/mapping_merged.bam",output_dir=config["output_dir"])
+        bamIn=expand("{output_dir}/Mapping/Bamout/{{mapper}}/mapping_rg_{{sample}}.bam",output_dir=config["output_dir"])
     output:
-        statscsv=expand("{output_dir}/{{mapper}}/stats.csv",output_dir=config["output_dir"])
+        statscsv=expand("{output_dir}/Analysis/{{mapper}}/perSample/{{sample}}.csv",output_dir=config["output_dir"])
     log: 
-        out= expand("{output_dir}/Logs/Analysis/stats_{{mapper}}.out.log",output_dir=config["output_dir"]),
-        err= expand("{output_dir}/Logs/Analysis/stats_{{mapper}}.err.log",output_dir=config["output_dir"])
+        out= expand("{output_dir}/Logs/Analysis/stats_{{mapper}}_{{sample}}.out.log",output_dir=config["output_dir"]),
+        err= expand("{output_dir}/Logs/Analysis/stats_{{mapper}}.{{sample}}.err.log",output_dir=config["output_dir"])
     benchmark:
-       "../Benchmarks/stats_{mapper}.benchmark.tsv"
+       "../Benchmarks/stats_{mapper}_{sample}.benchmark.tsv"
     conda: 
         "../Envs/stats.yaml"
     #threads: NULL
@@ -103,6 +103,32 @@ rule stats:
             2> {log.err}
         """
 
+
+rule merge_stats:
+    params:
+        mapper=MAPPER,
+        inDir=expand("{output_dir}/Analysis/{{mapper}}/perSample/",output_dir=config["output_dir"])
+    input:
+        statscsv=expand("{output_dir}/Analysis/{{mapper}}/perSample/{sample}.csv",output_dir=config["output_dir"],sample=SAMPLES)
+    output:
+        statscsv=expand("{output_dir}/Analysis/{{mapper}}/stats.csv",output_dir=config["output_dir"])
+    log: 
+        out= expand("{output_dir}/Logs/Analysis/stats_{{mapper}}.out.log",output_dir=config["output_dir"]),
+    benchmark:
+       "../Benchmarks/stats_{mapper}.benchmark.tsv"
+    conda: 
+        "../Envs/statsCombine.yaml"
+    #threads: NULL
+    shell:
+        """
+        Rscript Scripts/combineStatsFiles.R {params.inDir} {output.statscsv} > {log.out}
+        """
+
+
+
+
+
+
 # This rule simply calls another Python file as well. This time around it analyzes the csv-file
 # created by the previous rule, resulting in five files containing additional information for users
 # to properly interpret their data and results by filtering the csv according to the filter configuration.
@@ -113,15 +139,15 @@ rule stats:
 rule filter:
     params: 
         mapper=MAPPER,
-        outprefix=expand("{output_dir}/{{mapper}}/",output_dir=config["output_dir"])
+        outprefix=expand("{output_dir}/Analysis/{{mapper}}/",output_dir=config["output_dir"])
     input: 
-        statscsv=expand("{output_dir}/{{mapper}}/stats.csv",output_dir=config["output_dir"])
+        statscsv=expand("{output_dir}/Analysis/{{mapper}}/stats.csv",output_dir=config["output_dir"])
     output:
-        Data1=expand("{output_dir}/{{mapper}}/Data_1_Clusters_Target_vs_Reason_to_remove_8_15_1000_summed_per_species.txt", output_dir=config["output_dir"]),
-        Data2=expand("{output_dir}/{{mapper}}/Data_2_Clusters_filtered_due_to_homology_to_8_15_1000.txt", output_dir=config["output_dir"]),
-        Data3=expand("{output_dir}/{{mapper}}/Data_3_READ_COUNT_removed_CLUSTERS_SUM_8_15_1000.csv", output_dir=config["output_dir"]),
-        Data4=expand("{output_dir}/{{mapper}}/Data_4_SUM_8_15_1000.csv", output_dir=config["output_dir"]),
-        Data5=expand("{output_dir}/{{mapper}}/Data_5_SUM_MINREAD_FILTER_8_15_1000.csv", output_dir=config["output_dir"])
+        Data1=expand("{output_dir}/Analysis/{{mapper}}/Data_1_Clusters_Target_vs_Reason_to_remove_8_15_1000_summed_per_species.txt", output_dir=config["output_dir"]),
+        Data2=expand("{output_dir}/Analysis/{{mapper}}/Data_2_Clusters_filtered_due_to_homology_to_8_15_1000.txt", output_dir=config["output_dir"]),
+        Data3=expand("{output_dir}/Analysis/{{mapper}}/Data_3_READ_COUNT_removed_CLUSTERS_SUM_8_15_1000.csv", output_dir=config["output_dir"]),
+        Data4=expand("{output_dir}/Analysis/{{mapper}}/Data_4_SUM_8_15_1000.csv", output_dir=config["output_dir"]),
+        Data5=expand("{output_dir}/Analysis/{{mapper}}/Data_5_SUM_MINREAD_FILTER_8_15_1000.csv", output_dir=config["output_dir"])
     log: 
         out= expand("{output_dir}/Logs/Analysis/filter_{{mapper}}.out.log",output_dir=config["output_dir"]), 
         err= expand("{output_dir}/Logs/Analysis/filter_{{mapper}}.err.log",output_dir=config["output_dir"]),
