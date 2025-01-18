@@ -139,6 +139,9 @@ rule merge_stats:
 rule filter:
     params: 
         mapper=MAPPER,
+        filter_1=config["filter_1"],
+        filter_2=config["filter_2"],
+        filter_3=config["filter_3"],
         outprefix=expand("{output_dir}/Analysis/{{mapper}}/",output_dir=config["output_dir"])
     input: 
         statscsv=expand("{output_dir}/Analysis/{{mapper}}/stats.csv",output_dir=config["output_dir"])
@@ -161,9 +164,9 @@ rule filter:
         python Scripts/Parse_csv.py \
             -i {input.statscsv} \
             -log {log.log} \
-            -f1 8 \
-            -f2 15 \
-            -f3 1000 \
+            -f1 {params.filter_1} \
+            -f2 {params.filter_2} \
+            -f3 {params.filter_3} \
             -op {params.outprefix} \
             > {log.out} \
             2> {log.err}
