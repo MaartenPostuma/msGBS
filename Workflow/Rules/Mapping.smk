@@ -228,7 +228,12 @@ rule mapping_Star:
         sample='{sample}',
         indexprefix=expand("{output_dir}/Mapping/Index/Star", output_dir=config["output_dir"]),
         r1out=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.1.fq",output_dir=config["output_dir"]),
-        r2out=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.2.fq",output_dir=config["output_dir"])
+        r2out=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.2.fq",output_dir=config["output_dir"]),
+        logfinal=expand("{output_dir}/Mapping/{{sample)_Log.final", output_dir=config["output_dir"]),
+        log=expand("{output_dir}/Mapping/{{sample)_Log", output_dir=config["output_dir"]),
+        logprogress=expand("{output_dir}/Mapping/{{sample)_Log.progress", output_dir=config["output_dir"]),
+        outtab=expand("{output_dir}/Mapping/{{sample)_SJ.out.tab", output_dir=config["output_dir"]),
+        logout=expand("{output_dir}/Mapping/", output_dir=config["output_dir"])
     input:
         genome=expand("{output_dir}/Mapping/Index/Star/Genome" , output_dir=config["output_dir"]),
         r1=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.1.fq.gz",output_dir=config["output_dir"]),
@@ -238,7 +243,7 @@ rule mapping_Star:
         bamOut=temp(expand("{tmp_dir}/Mapping/Bamout/Star/mapping_sq_{{sample}}.bam",tmp_dir=config["tmp_dir"]))
     log: 
         star=expand("{output_dir}/Logs/Mapping/mapping_star_{{sample}}_st.log",output_dir=config["output_dir"]),
-        samtools=expand("{output_dir}/Logs/Mapping/mapping_star_{{sample}}_st.log",output_dir=config["output_dir"])
+        samtools=expand("{output_dir}/Logs/Mapping/mapping_star_{{sample}}_st.log",output_dir=config["output_dir"]),
     benchmark: 
        "../Benchmarks/mapping_star_{sample}.benchmark.tsv"
     conda: 
@@ -272,6 +277,10 @@ rule mapping_Star:
             --readMapNumber \
             -1 2> {log.star}
         mv ../Output/Mapping/{params.sample}_Aligned.out.sam {output.samOut}
+        mv {params.logfinal} {params.logout}
+        mv {params.log} {params.logout}
+        mv {params.logprogress} {params.logout}
+        mv {params.outtab} {params.logout}
         samtools view -b -o {output.bamOut} {output.samOut} \
             2> {log.samtools}
         gzip -f {params.r1out}
