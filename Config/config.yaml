@@ -41,6 +41,11 @@ blastDB: "../../../niels/blastdb"
 # sorteing
 min_unique_size : 2
 
+# filters
+filter_1: 8
+filter_2: 15
+filter_3: 1000
+
 # -- main folders
 output_dir    : "../Output"
 tmp_dir       : "../Misc"
