@@ -92,7 +92,8 @@ rule split_barcodes_demultiplex:
         barcodefilefiltered=expand("{output_dir}/Preprocessing/Barcodesfiltered/{{run}}_barcodefiltered.tsv", output_dir=config["output_dir"]),
         tmpdir=temp(directory(expand("{tmp_dir}/Preprocessing/Demultiplexed/{{run}}", tmp_dir=config["tmp_dir"])))
     log: 
-        expand("{output_dir}/Logs/Preprocessing/split_barcode_file_{{run}}.log", output_dir=config["output_dir"])
+        log1=expand("{output_dir}/Logs/Preprocessing/split_barcode_file_{{run}}.log", output_dir=config["output_dir"]),
+        log2=expand("{output_dir}/Logs/Preprocessing/process_radtags_{{run}}.log", output_dir=config["output_dir"])
     benchmark: 
        "../Benchmarks/split_barcode_file.benchmark_{run}.tsv"
     conda: 
@@ -157,7 +158,8 @@ rule split_barcodes_demultiplex:
             --retain_header \
             --disable_rad_check \
             --threads {threads} \
-            2> {log}
+            2> {log.log1}
+        mv {params.tmpdir}/processed_radtags.log {log.log2}
         """
 
 # In case there number of samples exceeds the number of available barcodes, multiple runs may required, which results in multiple read-pair files
