@@ -159,7 +159,7 @@ rule split_barcodes_demultiplex:
             --disable_rad_check \
             --threads {threads} \
             2> {log.log1}
-        mv {output.tmpdir}/processed_radtags.log {log.log2}
+        mv {output.tmpdir}/process_radtags.Deduplicated.log {log.log2}
         """
 
 # In case there number of samples exceeds the number of available barcodes, multiple runs may required, which results in multiple read-pair files
