@@ -42,7 +42,11 @@ rule blast:
     conda: 
         "../Envs/blast.yaml"
     threads: 
-        32
+        16
+    resources:
+        mem_mb= 100000,
+        runtime= 240,
+        cpus_per_task= 16
     shell:
         """
         export BLASTDB={params.blastDB}
@@ -66,6 +70,10 @@ rule temp_blastref:
         output_dir=config["output_dir"],
         sup_dir=config["sup_dir"]
     conda: "../Envs/blastparse.yaml"
+    resources:
+        mem_mb= 10000,
+        runtime= 60,
+        cpus_per_task= 1    
     shell:
         """
         python Scripts/temp_solution_blast_parse.py \

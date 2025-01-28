@@ -30,7 +30,11 @@ rule mapping_Bowtie2_index:
     conda: 
         "../Envs/bowtie2.yaml"
     threads: 
-        32
+        16
+    resources:
+        mem_mb= 10000,
+        runtime= 120,
+        cpus_per_task= 16 
     shell:
         """
         echo "Commencing Bowtie mapping" >> time.txt
@@ -75,6 +79,10 @@ rule mapping_Bowtie2:
         "../Envs/bowtie2.yaml"
     threads: 
         8
+    resources:
+        mem_mb= 10000,
+        runtime= 60,
+        cpus_per_task= 8   
     shell:
         """
         bowtie2 \
@@ -115,7 +123,11 @@ rule mapping_bwa_index:
     conda: 
         "../Envs/bwa.yaml"
     threads: 
-        32
+        16
+    resources:
+        mem_mb= 10000,
+        runtime= 60,
+        cpus_per_task= 16   
     shell:
         """
         echo "Commencing Bwa mapping" >> time.txt
@@ -158,6 +170,10 @@ rule mapping_BWA:
         "../Envs/bwa.yaml"
     threads: 
         8
+    resources:
+        mem_mb= 20000,
+        runtime= 60,
+        cpus_per_task= 8       
     shell:
         """
         bwa mem \
@@ -197,7 +213,11 @@ rule mapping_star_index:
     conda: 
         "../Envs/star.yaml"
     threads: 
-        32
+        16
+    resources:
+        mem_mb= 200000,
+        runtime= 60,
+        cpus_per_task= 16       
     shell:
         """
         echo "Commencing STAR mapping" >> time.txt
@@ -245,6 +265,10 @@ rule mapping_Star:
         "../Envs/star.yaml"
     threads: 
         8
+    resources:
+        mem_mb= 200000,
+        runtime= 60,
+        cpus_per_task= 16               
     shell:
         """
         gunzip -f {input.r1}

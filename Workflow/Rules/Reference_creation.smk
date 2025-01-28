@@ -18,7 +18,6 @@
 #           - The merged reads from the preprocessed read files from one of the monos.
 rule merge_monos:
     params:
-        sample='{sample}',
         supplement="Supplement",
         outputprefix=expand("{tmp_dir}/Reference_creation/Joined/{{sample}}.notmerged",  tmp_dir=config["tmp_dir"])
     input:
@@ -36,6 +35,10 @@ rule merge_monos:
         "../Envs/merge_reads.yaml"
     threads: 
         4
+    resources:
+        mem_mb= 10000,
+        runtime= 60,
+        cpus_per_task= 4
     shell:
         """
         NGmerge \
@@ -63,7 +66,6 @@ rule merge_monos:
 # Output:   - The joined reads from a mono-sample readfile.
 rule join_monos:
     params:
-        sample='{sample}',
         barcode_R1=config["barcode_R1"],
         barcode_R2=config["barcode_R2"],
         wobble_R1=config["wobble_R1"],
@@ -80,6 +82,10 @@ rule join_monos:
        "../Benchmarks/join_monos_{sample}/benchmark.tsv"
     conda: 
         "../Envs/combine_reads.yaml"
+    resources:
+        mem_mb= 1000,
+        runtime= 10,
+        cpus_per_task= 1
     threads:
         1
     shell:
@@ -145,8 +151,6 @@ rule join_monos:
 #           - The merged reads for one of the monos.
 # Output:   - A read file that contains all joined and merged reads for one of the monos.
 rule cat_monos:
-    params:
-        sample='{sample}'
     input:
         merged=expand("{tmp_dir}/Reference_creation/Merged/{{sample}}.merged.fastq.gz",  tmp_dir=config["tmp_dir"]),
         joined=expand("{tmp_dir}/Reference_creation/Joined/{{sample}}.joined.fastq.gz",  tmp_dir=config["tmp_dir"])
@@ -155,7 +159,10 @@ rule cat_monos:
     #log: NULL
     benchmark:
        "../Benchmarks/join_monos_{sample}/benchmark.tsv"
-    #conda: NULL
+    resources:
+        mem_mb= 1000,
+        runtime= 10,
+        cpus_per_task= 1
     threads:
         1
     shell:
@@ -168,8 +175,6 @@ rule cat_monos:
 # Input:    - The combined mono-reads.
 # Output:   - A sorted version of the combined mono-reads.
 rule sort_monos:
-    params:
-        sample='{sample}'
     input:
         combined=expand("{tmp_dir}/Reference_creation/Joined/{{sample}}.combined.fastq.gz",  tmp_dir=config["tmp_dir"])
     output:
@@ -180,6 +185,10 @@ rule sort_monos:
        "../Benchmarks/sort_monos_{sample}/benchmark.tsv"
     conda: 
         "../Envs/sort.yaml"
+    resources:
+        mem_mb= 10000,
+        runtime= 20,
+        cpus_per_task= 4
     threads:
         4
     shell:
@@ -198,7 +207,6 @@ rule sort_monos:
 # Output:   - A dereplicated version of the sorted mono-read-files.
 rule derep_monos:
     params:
-        sample='{sample}',
         min_unique_size=config["min_unique_size"]
     input:
         sorted=expand("{tmp_dir}/Reference_creation/Sorted/{{sample}}.sorted.fa",  tmp_dir=config["tmp_dir"])
@@ -210,6 +218,10 @@ rule derep_monos:
        "../Benchmarks/derep_monos_{sample}/benchmark.tsv"
     conda: 
         "../Envs/derep_monos.yaml"
+    resources:
+        mem_mb= 10000,
+        runtime= 20,
+        cpus_per_task= 4
     threads:
         4
     shell:
@@ -240,6 +252,10 @@ rule resort_monos:
        "../Benchmarks/resort_monos_{sample}/benchmark.tsv"
     conda: 
         "../Envs/sort.yaml"
+    resources:
+        mem_mb= 10000,
+        runtime= 20,
+        cpus_per_task= 4
     threads:
         4
     shell:
@@ -258,8 +274,6 @@ rule resort_monos:
 # Input:    - A sorted version of the dereplicated mono-read files.
 # Output:   - A clustered version of the dereplicated mono-read files.
 rule cluster:
-    params:
-        sample='{sample}',
     input:
         sorted=expand("{tmp_dir}/Reference_creation/Sorted/{{sample}}.resorted.fa", tmp_dir=config["tmp_dir"])
     output:
@@ -270,6 +284,10 @@ rule cluster:
        "../Benchmarks/cluster_{sample}/benchmark.tsv"
     conda: 
         "../Envs/cluster.yaml"
+    resources:
+        mem_mb= 10000,
+        runtime= 20,
+        cpus_per_task= 4
     threads: 
         4
     shell:
@@ -301,8 +319,10 @@ rule rename_fast:
     #log: NULL
     benchmark:
        "../Benchmarks/rename_fast_{sample}/benchmark.tsv"
-    #conda: NULL
-    #threads: NULL
+    resources:
+        mem_mb= 10000,
+        runtime= 20,
+        cpus_per_task= 1
     shell: 
         """
         index=0
@@ -352,8 +372,10 @@ rule ref_out:
     #log: NULL
     benchmark:
        "../Benchmarks/ref_out.benchmark.tsv"
-    #conda: NULL
-    #threads: NULL
+    resources:
+        mem_mb= 10000,
+        runtime= 20,
+        cpus_per_task= 1
     shell:
         """
         cat {params.inputprefix}*.renamed.fa > {output.ref}

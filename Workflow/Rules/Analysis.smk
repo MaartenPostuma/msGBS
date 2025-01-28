@@ -30,6 +30,10 @@ rule bam_rg:
     conda:
         "../Envs/bam_rg.yaml"
     threads: 4
+    resources:
+        mem_mb= 200000,
+        runtime= 10,
+        cpus_per_task= 4       
     shell:
         """
         picard AddOrReplaceReadGroups -XX:ActiveProcessorCount={threads} -Xmx10g \
@@ -92,6 +96,10 @@ rule stats:
     conda: 
         "../Envs/stats.yaml"
     #threads: NULL
+    resources:
+        mem_mb= 2000,
+        runtime= 10,
+        cpus_per_task= 1       
     shell:
         """
         echo 'Finished mapping with {params.mapper}'  >> time.txt 
@@ -119,6 +127,10 @@ rule merge_stats:
     conda: 
         "../Envs/statsCombine.yaml"
     #threads: NULL
+    resources:
+        mem_mb= 50000,
+        runtime= 10,
+        cpus_per_task= 1          
     shell:
         """
         Rscript Scripts/combineStatsFiles.R {params.inDir} {output.statscsv} > {log.out}
@@ -155,7 +167,10 @@ rule filter:
     benchmark:
        "../Benchmarks/filter_{mapper}.benchmark.tsv"
     conda: "../Envs/filter.yaml"
-    #threads: NULL
+    resources:
+        mem_mb= 50000,
+        runtime= 10,
+        cpus_per_task= 1       
     shell:
         """
         python Scripts/Parse_csv.py \
@@ -199,6 +214,10 @@ rule logging:
     conda:
         "../Envs/logging.yaml"
     #threads: NULL
+    resources:
+        mem_mb= 1000,
+        runtime= 10,
+        cpus_per_task= 1          
     shell:
         """
         multiqc {params.logdir} \
