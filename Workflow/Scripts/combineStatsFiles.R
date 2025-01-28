@@ -18,6 +18,6 @@ out[is.na(out)]<-0
 colnames(out)<-sub("^X","",colnames(out))
 
 print(removedSamples)
-write.csv(out,output,row.names=F)
-write.csv(removedSamples,paste(output,"removedSamples.txt"))
+write.table(out,output,row.names=F, sep='\t', quote=F)
+write.table(removedSamples,paste(output,"removedSamples.txt"))
 

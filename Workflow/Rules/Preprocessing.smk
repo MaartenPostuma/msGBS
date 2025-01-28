@@ -93,7 +93,8 @@ rule split_barcodes:
     output:
         barcodefilefiltered=expand("{output_dir}/Preprocessing/Barcodesfiltered/{{run}}_barcodefiltered.tsv", output_dir=config["output_dir"]),
     log: 
-        expand("{output_dir}/Logs/Preprocessing/split_barcode_file_{{run}}.log", output_dir=config["output_dir"])
+        log1=expand("{output_dir}/Logs/Preprocessing/split_barcode_file_{{run}}.log", output_dir=config["output_dir"]),
+        log2=expand("{output_dir}/Logs/Preprocessing/process_radtags_{{run}}.log", output_dir=config["output_dir"])
     benchmark: 
        "../Benchmarks/split_barcode_file.benchmark_{run}.tsv"
     resources:
