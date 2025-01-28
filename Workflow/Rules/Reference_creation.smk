@@ -29,9 +29,9 @@ rule merge_monos:
         notmergedR2=temp(expand("{tmp_dir}/Reference_creation/Joined/{{sample}}.notmerged_2.fastq.gz",  tmp_dir=config["tmp_dir"])),
         merged=temp(expand("{tmp_dir}/Reference_creation/Merged/{{sample}}.merged.fastq.gz",  tmp_dir=config["tmp_dir"]))
     log: 
-        expand("{output_dir}/Logs/Reference_creation/merge_monos_{{sample}}/log",  output_dir=config["output_dir"])
+        expand("{output_dir}/Logs/Reference_creation/merge_monos_{{sample}}.log",  output_dir=config["output_dir"])
     benchmark:
-       "../Benchmarks/merge_monos_{sample}/benchmark.tsv"
+       "../Benchmarks/merge_monos_{sample}.benchmark.tsv"
     conda: 
         "../Envs/merge_reads.yaml"
     threads: 
@@ -77,7 +77,7 @@ rule join_monos:
         joined=temp(expand("{tmp_dir}/Reference_creation/Joined/{{sample}}.joined.fastq.gz",  tmp_dir=config["tmp_dir"]))
     #log: NULL
     benchmark:
-       "../Benchmarks/join_monos_{sample}/benchmark.tsv"
+       "../Benchmarks/join_monos_{sample}.benchmark.tsv"
     conda: 
         "../Envs/combine_reads.yaml"
     threads:
@@ -154,7 +154,7 @@ rule cat_monos:
         combined=temp(expand("{tmp_dir}/Reference_creation/Joined/{{sample}}.combined.fastq.gz",  tmp_dir=config["tmp_dir"]))
     #log: NULL
     benchmark:
-       "../Benchmarks/join_monos_{sample}/benchmark.tsv"
+       "../Benchmarks/join_monos_{sample}.benchmark.tsv"
     #conda: NULL
     threads:
         1
@@ -175,9 +175,9 @@ rule sort_monos:
     output:
         sorted=temp(expand("{tmp_dir}/Reference_creation/Sorted/{{sample}}.sorted.fa",  tmp_dir=config["tmp_dir"]))
     log: 
-        expand("{output_dir}/Logs/Reference_creation/sort_monos_{{sample}}/log",  output_dir=config["output_dir"])
+        expand("{output_dir}/Logs/Reference_creation/sort_monos_{{sample}}.log",  output_dir=config["output_dir"])
     benchmark:
-       "../Benchmarks/sort_monos_{sample}/benchmark.tsv"
+       "../Benchmarks/sort_monos_{sample}.benchmark.tsv"
     conda: 
         "../Envs/sort.yaml"
     threads:
@@ -205,9 +205,9 @@ rule derep_monos:
     output:
         dereplicated=temp(expand("{tmp_dir}/Reference_creation/Dereplicated/{{sample}}.dereplicated.fa",  tmp_dir=config["tmp_dir"]))
     log: 
-        expand("{output_dir}/Logs/Reference_creation/derep_monos_{{sample}}/log",  output_dir=config["output_dir"])
+        expand("{output_dir}/Logs/Reference_creation/derep_monos_{{sample}}.log",  output_dir=config["output_dir"])
     benchmark:
-       "../Benchmarks/derep_monos_{sample}/benchmark.tsv"
+       "../Benchmarks/derep_monos_{sample}.benchmark.tsv"
     conda: 
         "../Envs/derep_monos.yaml"
     threads:
@@ -235,9 +235,9 @@ rule resort_monos:
     output:
         sorted=temp(expand("{tmp_dir}/Reference_creation/Sorted/{{sample}}.resorted.fa", tmp_dir=config["tmp_dir"]))
     log: 
-        expand("{output_dir}/Logs/Reference_creation/resort_monos_{{sample}}/log",  output_dir=config["output_dir"])
+        expand("{output_dir}/Logs/Reference_creation/resort_monos_{{sample}}.log",  output_dir=config["output_dir"])
     benchmark:
-       "../Benchmarks/resort_monos_{sample}/benchmark.tsv"
+       "../Benchmarks/resort_monos_{sample}.benchmark.tsv"
     conda: 
         "../Envs/sort.yaml"
     threads:
@@ -265,9 +265,9 @@ rule cluster:
     output:
         clustered=temp(expand("{tmp_dir}/Reference_creation/Clustered/{{sample}}.clustered.fa", tmp_dir=config["tmp_dir"]))
     log: 
-        expand("{output_dir}/Logs/Reference_creation/cluster_{{sample}}/log",  output_dir=config["output_dir"])
+        expand("{output_dir}/Logs/Reference_creation/cluster_{{sample}}.log",  output_dir=config["output_dir"])
     benchmark:
-       "../Benchmarks/cluster_{sample}/benchmark.tsv"
+       "../Benchmarks/cluster_{sample}.benchmark.tsv"
     conda: 
         "../Envs/cluster.yaml"
     threads: 
@@ -300,7 +300,7 @@ rule rename_fast:
         renamed=temp(expand("{tmp_dir}/Reference_creation/Renamed/{{sample}}.renamed.fa", tmp_dir=config["tmp_dir"]))
     #log: NULL
     benchmark:
-       "../Benchmarks/rename_fast_{sample}/benchmark.tsv"
+       "../Benchmarks/rename_fast_{sample}.benchmark.tsv"
     #conda: NULL
     #threads: NULL
     shell: 
