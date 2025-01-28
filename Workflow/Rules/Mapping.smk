@@ -229,11 +229,11 @@ rule mapping_Star:
         indexprefix=expand("{output_dir}/Mapping/Index/Star", output_dir=config["output_dir"]),
         r1out=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.1.fq",output_dir=config["output_dir"]),
         r2out=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.2.fq",output_dir=config["output_dir"]),
-        logfinal=expand("{output_dir}/Mapping/{{sample)_Log.final", output_dir=config["output_dir"]),
-        log=expand("{output_dir}/Mapping/{{sample)_Log", output_dir=config["output_dir"]),
-        logprogress=expand("{output_dir}/Mapping/{{sample)_Log.progress", output_dir=config["output_dir"]),
-        outtab=expand("{output_dir}/Mapping/{{sample)_SJ.out.tab", output_dir=config["output_dir"]),
-        logout=expand("{output_dir}/Mapping/", output_dir=config["output_dir"])
+        logfinal=expand("{output_dir}/Mapping/{{sample}}_Log.final.out", output_dir=config["output_dir"]),
+        log=expand("{output_dir}/Mapping/{{sample}}_Log.out", output_dir=config["output_dir"]),
+        logprogress=expand("{output_dir}/Mapping/{{sample}}_Log.progress.out", output_dir=config["output_dir"]),
+        outtab=expand("{output_dir}/Mapping/{{sample}}_SJ.out.tab", output_dir=config["output_dir"]),
+        logout=expand("{output_dir}/Logs/Mapping/", output_dir=config["output_dir"])
     input:
         genome=expand("{output_dir}/Mapping/Index/Star/Genome" , output_dir=config["output_dir"]),
         r1=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.1.fq.gz",output_dir=config["output_dir"]),
