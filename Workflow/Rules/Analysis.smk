@@ -3,8 +3,8 @@
 # Date:                     ../../..
 # 
 # The rules in this file handle analyzing mapper output, as well as creating a summary of log-files.
-# They format mapper output in a way where a Python file can accept it, and summarize it into a csv-file
-# this csv-file can in turn be parsed by another Python-file, which outputs another five analysis files.
+# They format mapper output in a way where a Python file can accept it, and summarize it into a tsv-file
+# this tsv-file can in turn be parsed by another Python-file, which outputs another five analysis files.
 # --------------------------------------------------------------------------------------------------------------------
 
 
@@ -28,7 +28,7 @@ rule bam_rg:
     benchmark: 
        "../Benchmarks/bam_rg_{sample}_{mapper}.benchmark.tsv"
     conda:
-        "../Envs/bam_rg.yaml"
+        "src/Envs/bam_rg.yaml"
     threads: 4
     resources:
         mem_mb= 200000,
@@ -65,7 +65,7 @@ rule bam_rg:
 #     benchmark: 
 #        "../Benchmarks/bam_merge_{mapper}.benchmark.tsv"
 #     conda: 
-#         "../Envs/bam_merge.yaml"
+#         "src/Envs/bam_merge.yaml"
 #     #threads: NULL
 #     shell:
 #         """
@@ -75,11 +75,11 @@ rule bam_rg:
 #         """
 
 # This rule essentially just calls a Python file that is able to analyze a readgrouped bam-file.
-# This file parses the bam-file, and moulds its contents into a human readable csv-file that
+# This file parses the bam-file, and moulds its contents into a human readable tsv-file that
 # summarizes how many reads were mapped to which read from the meta-reference from which sample. 
 # -----     
 # Input:    - A readgrouped bam-file containing all data originating from the bam-files from one of the mappers.
-# Output:   - A human readable csv-file summarizing how many reads were mapped to which meta-reference
+# Output:   - A human readable tsv-file summarizing how many reads were mapped to which meta-reference
 #             read from which sample.
 rule stats:
     params:
@@ -87,14 +87,14 @@ rule stats:
     input:
         bamIn=expand("{output_dir}/Mapping/Bamout/{{mapper}}/mapping_rg_{{sample}}.bam",output_dir=config["output_dir"])
     output:
-        statscsv=expand("{output_dir}/Analysis/{{mapper}}/perSample/{{sample}}.csv",output_dir=config["output_dir"])
+        statstsv=expand("{output_dir}/Analysis/{{mapper}}/perSample/{{sample}}.tsv",output_dir=config["output_dir"])
     log: 
         out= expand("{output_dir}/Logs/Analysis/stats_{{mapper}}_{{sample}}.out.log",output_dir=config["output_dir"]),
         err= expand("{output_dir}/Logs/Analysis/stats_{{mapper}}.{{sample}}.err.log",output_dir=config["output_dir"])
     benchmark:
        "../Benchmarks/stats_{mapper}_{sample}.benchmark.tsv"
     conda: 
-        "../Envs/stats.yaml"
+        "src/Envs/stats.yaml"
     #threads: NULL
     resources:
         mem_mb= 2000,
@@ -104,7 +104,7 @@ rule stats:
         """
         python Scripts/Stats.py \
             -i {input.bamIn} \
-            -o {output.statscsv} \
+            -o {output.statstsv} \
             > {log.out} \
             2> {log.err}
         """
@@ -115,15 +115,15 @@ rule merge_stats:
         mapper=MAPPER,
         inDir=expand("{output_dir}/Analysis/{{mapper}}/perSample/",output_dir=config["output_dir"])
     input:
-        statscsv=expand("{output_dir}/Analysis/{{mapper}}/perSample/{sample}.csv",output_dir=config["output_dir"],sample=SAMPLES)
+        statstsv=expand("{output_dir}/Analysis/{{mapper}}/perSample/{sample}.tsv",output_dir=config["output_dir"],sample=SAMPLES)
     output:
-        statscsv=expand("{output_dir}/Analysis/{{mapper}}/stats.csv",output_dir=config["output_dir"])
+        statstsv=expand("{output_dir}/Analysis/{{mapper}}/stats.tsv",output_dir=config["output_dir"])
     log: 
         out= expand("{output_dir}/Logs/Analysis/stats_{{mapper}}.out.log",output_dir=config["output_dir"]),
     benchmark:
        "../Benchmarks/stats_{mapper}.benchmark.tsv"
     conda: 
-        "../Envs/statsCombine.yaml"
+        "src/Envs/statsCombine.yaml"
     #threads: NULL
     resources:
         mem_mb= 50000,
@@ -133,7 +133,7 @@ rule merge_stats:
         """
         echo 'Finished mapping with {params.mapper}'  >> time.txt 
         date +%s%N >> time.txt 
-        Rscript Scripts/combineStatsFiles.R {params.inDir} {output.statscsv} > {log.out}
+        Rscript Scripts/combineStatsFiles.R {params.inDir} {output.statstsv} > {log.out}
         """
 
 
@@ -141,13 +141,13 @@ rule merge_stats:
 
 
 
-# This rule simply calls another Python file as well. This time around it analyzes the csv-file
+# This rule simply calls another Python file as well. This time around it analyzes the tsv-file
 # created by the previous rule, resulting in five files containing additional information for users
-# to properly interpret their data and results by filtering the csv according to the filter configuration.
+# to properly interpret their data and results by filtering the tsv according to the filter configuration.
 # -----     
 # Input:    - The aforementioned human readable cssv-file summarizing how many reads were mapped 
 #             to which meta-reference read from which sample. 
-# Output:   - The files discussing or displaying specific data after applying user-defined filters to the csv file.
+# Output:   - The files discussing or displaying specific data after applying user-defined filters to the tsv file.
 rule filter:
     params: 
         mapper=MAPPER,
@@ -156,28 +156,28 @@ rule filter:
         filter_3=config["filter_3"],
         outprefix=expand("{output_dir}/Analysis/{{mapper}}/",output_dir=config["output_dir"])
     input: 
-        statscsv=expand("{output_dir}/Analysis/{{mapper}}/stats.csv",output_dir=config["output_dir"])
+        statstsv=expand("{output_dir}/Analysis/{{mapper}}/stats.tsv",output_dir=config["output_dir"])
     output:
         Data1=expand("{output_dir}/Analysis/{{mapper}}/Data_1_Clusters_Target_vs_Reason_to_remove_8_15_1000_summed_per_species.txt", output_dir=config["output_dir"]),
         Data2=expand("{output_dir}/Analysis/{{mapper}}/Data_2_Clusters_filtered_due_to_homology_to_8_15_1000.txt", output_dir=config["output_dir"]),
-        Data3=expand("{output_dir}/Analysis/{{mapper}}/Data_3_READ_COUNT_removed_CLUSTERS_SUM_8_15_1000.csv", output_dir=config["output_dir"]),
-        Data4=expand("{output_dir}/Analysis/{{mapper}}/Data_4_SUM_8_15_1000.csv", output_dir=config["output_dir"]),
-        Data5=expand("{output_dir}/Analysis/{{mapper}}/Data_5_SUM_MINREAD_FILTER_8_15_1000.csv", output_dir=config["output_dir"])
+        Data3=expand("{output_dir}/Analysis/{{mapper}}/Data_3_READ_COUNT_removed_CLUSTERS_SUM_8_15_1000.tsv", output_dir=config["output_dir"]),
+        Data4=expand("{output_dir}/Analysis/{{mapper}}/Data_4_SUM_8_15_1000.tsv", output_dir=config["output_dir"]),
+        Data5=expand("{output_dir}/Analysis/{{mapper}}/Data_5_SUM_MINREAD_FILTER_8_15_1000.tsv", output_dir=config["output_dir"])
     log: 
         out= expand("{output_dir}/Logs/Analysis/filter_{{mapper}}.out.log",output_dir=config["output_dir"]), 
         err= expand("{output_dir}/Logs/Analysis/filter_{{mapper}}.err.log",output_dir=config["output_dir"]),
         log= expand("{output_dir}/Logs/Analysis/filter_{{mapper}}.log.log",output_dir=config["output_dir"])
     benchmark:
        "../Benchmarks/filter_{mapper}.benchmark.tsv"
-    conda: "../Envs/filter.yaml"
+    conda: "src/Envs/filter.yaml"
     resources:
         mem_mb= 50000,
         runtime= 10,
         cpus_per_task= 1       
     shell:
         """
-        python Scripts/Parse_csv.py \
-            -i {input.statscsv} \
+        python Scripts/Parse_tsv.py \
+            -i {input.statstsv} \
             -log {log.log} \
             -f1 {params.filter_1} \
             -f2 {params.filter_2} \
@@ -192,7 +192,7 @@ rule filter:
 # most of them are irrelevant, empty or perhaps only contain log-data originating from rules
 # that generate logs that MultiQC is unable to parse.
 # -----     
-# Input:    - The files discussing or displaying specific data after applying user-defined filters to the csv file.
+# Input:    - The files discussing or displaying specific data after applying user-defined filters to the tsv file.
 #             [NOTE] These files are not actually used by this rule, and are only defined as input because 
 #                    the existence of these files confirms the completion of the entire pipeline, which would in turn
 #                    mean all log-files are available to parse at that moment.
@@ -204,9 +204,9 @@ rule logging:
     input:
         Data1=expand("{output_dir}/Analysis/{mapper}/Data_1_Clusters_Target_vs_Reason_to_remove_8_15_1000_summed_per_species.txt", output_dir=config["output_dir"], mapper=MAPPER),
         Data2=expand("{output_dir}/Analysis/{mapper}/Data_2_Clusters_filtered_due_to_homology_to_8_15_1000.txt", output_dir=config["output_dir"], mapper=MAPPER),
-        Data3=expand("{output_dir}/Analysis/{mapper}/Data_3_READ_COUNT_removed_CLUSTERS_SUM_8_15_1000.csv", output_dir=config["output_dir"], mapper=MAPPER),
-        Data4=expand("{output_dir}/Analysis/{mapper}/Data_4_SUM_8_15_1000.csv", output_dir=config["output_dir"], mapper=MAPPER),
-        Data5=expand("{output_dir}/Analysis/{mapper}/Data_5_SUM_MINREAD_FILTER_8_15_1000.csv", output_dir=config["output_dir"], mapper=MAPPER)
+        Data3=expand("{output_dir}/Analysis/{mapper}/Data_3_READ_COUNT_removed_CLUSTERS_SUM_8_15_1000.tsv", output_dir=config["output_dir"], mapper=MAPPER),
+        Data4=expand("{output_dir}/Analysis/{mapper}/Data_4_SUM_8_15_1000.tsv", output_dir=config["output_dir"], mapper=MAPPER),
+        Data5=expand("{output_dir}/Analysis/{mapper}/Data_5_SUM_MINREAD_FILTER_8_15_1000.tsv", output_dir=config["output_dir"], mapper=MAPPER)
     output:
         alllogs=expand("{output_dir}/logSummary/multiQClogsummary.html", output_dir=config["output_dir"])
     log:
@@ -215,7 +215,7 @@ rule logging:
     benchmark:
        "../Benchmarks/logging.benchmark.tsv"
     conda:
-        "../Envs/logging.yaml"
+        "src/Envs/logging.yaml"
     #threads: NULL
     resources:
         mem_mb= 1000,

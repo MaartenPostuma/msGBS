@@ -4,18 +4,17 @@ mapper_mode : "All"
 # This parameter defines the name of the barcode file in the Input folder.
 barcode_file: "barcodes.tsv"
 # Below, set the location of the Input folder.
-input_dir     : "../../../../vol/ribesecology/jelle"
+input_dir     : "/vol/ribesecology/nielsw"
+
+# -- main folders
+output_dir    : "../Output"
+tmp_dir       : "../Misc"
+sup_dir       : "Supplement" 
+
 # To change the multimap, edit the number after k or c, depending on which mapper(s) should be used. If multimapping should 
 # be turned off, this should be an empty string.
 multimap_bowtie : ""
 multimap_bwa    : ""
-# In case the STAR mapper is to be used, set the value below to whatever value feels like a sufficient value  for RAM usage in bits.
-# A value too low tends to break the entire thing currently, so better to overshoot than to undershooot. The default value should be enough.
-star_ram        : 665000000000
-# In case the adapters that should be used are different than the ones defined below, 
-# change them to the correct adapters.
-adapter1: "ATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT" 
-adapter2: "CAAGCAGAAGACGGCATACGAGATCGGTCTCGGCATTCCTGCTGAACCGCTCTTCCGATCT"
 
 
 
@@ -37,76 +36,21 @@ pcr_cycles        : 150
 #Minimal cluster depth
 min-depth: 2
 #Location of the blastDB
-blastDB: "../../../niels/blastdb"
+blastDB: /vol/micro-databaes/blast"
 # sorteing
 min_unique_size : 2
 
-# filters
+# filters parameters for csv filtering
 filter_1: 8
 filter_2: 15
 filter_3: 1000
 
-# -- main folders
-output_dir    : "../Output"
-tmp_dir       : "../Misc"
-sup_dir       : "Supplement" 
+# In case the adapters that should be used are different than the ones defined below, 
+# change them to the correct adapters.
+adapter1: "ATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT" 
+adapter2: "CAAGCAGAAGACGGCATACGAGATCGGTCTCGGCATTCCTGCTGAACCGCTCTTCCGATCT"
 
-
-# -- filenames
-Read1   : "readsFfull.fq.gz"
-Read2   : "readsRfull.fq.gz"
-genus   : "Relevant_organisms.csv"
-
-# -- Preprocessing
-barcodefiltered_file: "barcodefiltered.tsv"
-
-# barcode settings
-barcode_R1  : "Barcode_R1"
-barcode_R2  : "Barcode_R2"
-sample      : "Sample"
-readfile_R1 : "rawR1"
-readfile_R2 : "rawR2"
-enzyme_R1   : "ENZ_R1"
-enzyme_R2   : "ENZ_R2"
-wobble_R1   : "Wobble_R1"
-wobble_R2   : "Wobble_R2"
-
-
-# -- general sub folders
-#preprocessing_out: "../Output/Preprocessing"
-#preprocessing_tmp: "../Misc/Preprocessing"
-
-#blasting_out:   "../Output/Blasting"
-#blasting_tmp:   "../Misc/Blasting"
-
-#referencecreation_out: "../Output/Referencecreation"
-#referencecreation_tmp: "../Misc/Referencecreation"
-
-#mapping_out: "../Output/Mapping"
-#mapping_tmp: "../Misc/Mapping"
-
-#analysis_out: "../Output/Analysis"
-#analysis_tmp: "../Misc/Analysis"
-
-# -- specific sub folders
-#deduplicated_dir      : "../Misc/Preprocessing/Deduplicated"
-#demultiplexed_dir     : "../Misc/Preprocessing/Demultiplexed"
-#readgrouped_dir       : "../Misc/Preprocessing/Readgrouped"
-#barcodes_dir          : "../Output/Preprocessing/Barcodesfiltered"
-#fastpfiles_dir        : "../Output/Preprocessing/Fastpreports"
-#allpreprocessed_dir   : "../Output/Preprocessing/Preprocessed"
-#renamed_dir           : "../Misc/Preprocessing/Renamed"
-#log_dir               : "../Logs"
-#logsummary_dir        : "../Output/Analysis/Logsummaries"
-#mono_dir              : "../Output/Preprocessing/Preprocessedmonos"
-#mergedmono_dir        : "../Misc/Reference_creation/Merged"
-#joinedmono_dir        : "../Misc/Reference_creation/Joined"
-#sortedmono_dir        : "../Misc/Reference_creation/Sorted"
-#dereplicated_dir      : "../Misc/Reference_creation/Dereplicated"
-#clustered_dir         : "../Misc/Reference_creation/Clustered"
-#renamedmono_dir       : "../Misc/Reference_creation/Renamed"
-#ref_dir               : "../Output/Reference_creation"
-#sam_dir               : "../Misc/Mapping/Samout"
-#bam_dir               : "../Misc/Mapping/Bamout"
-#map_index_dir         : "../Output/Mapping/Index"
+# In case the STAR mapper is to be used, set the value below to whatever value feels like a sufficient value  for RAM usage in bits.
+# A value too low tends to break the entire thing currently, so better to overshoot than to undershooot. The default value should be enough.
+star_ram        : 665000000000
 

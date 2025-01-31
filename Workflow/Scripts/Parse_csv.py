@@ -12,7 +12,7 @@ start_time = time.time()
 
 # THIS script is adjusted for the new msGBS Snakemake pipeline 2024
 
-# It uses the leafmono read mapping to execute the cluster filtering
+# It uses the rootmono read mapping to execute the cluster filtering
 
 ### Default filter parameters : ###
 #   Filter 1 : 4  # effectively this means that a minimum of 4 mapped reads (total over all samples) are needed
@@ -22,9 +22,9 @@ start_time = time.time()
 #                      This taxonomic uninformative clusters.
 #   Filter 3 : 1000 # min reads per samples to be retained (applied later in this script)
 
-# names of mono samples         : leafmono1, leafmono2, leafmono3 ...
+# names of mono samples         : rootmono1, rootmono2, rootmono3 ...
 #
-# names of reference contigs    : leafmono1_1, leafmono1_2, etc...
+# names of reference contigs    : rootmono1_1, rootmono1_2, etc...
 
 simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
 pd.set_option('display.max_columns', 1000)
@@ -108,22 +108,22 @@ def calculate_ESA(args):
 
     logstring = str("ready \n\n")
     logstring += str("time finished : %s\n"% datetime.datetime.now())
-    logstring += str("Start: remove duplicate leafmono samples")
+    logstring += str("Start: remove duplicate rootmono samples")
 
     cmd = [""]
     log = logstring
     run_subprocess(cmd,args,log)
 
-    df_leafmono = df.filter(regex='^Locus|^leafmono', axis=1)
+    df_rootmono = df.filter(regex='^Locus|^rootmono', axis=1)
 
-    df_leafmono.set_index('Locus', inplace=True)
-    df_sum_sample_leafmono = df_leafmono.sum(axis=0)
-    df_leafmono_div = df_leafmono.div(df_sum_sample_leafmono.squeeze())
-    df_leafmono_div['max']=df_leafmono_div.idxmax(axis=1)
+    df_rootmono.set_index('Locus', inplace=True)
+    df_sum_sample_rootmono = df_rootmono.sum(axis=0)
+    df_rootmono_div = df_rootmono.div(df_sum_sample_rootmono.squeeze())
+    df_rootmono_div['max']=df_rootmono_div.idxmax(axis=1)
     getridof=[]
     df.set_index('Locus', inplace=True)
 
-    '''FILTERING of CLUSTERS in the mapping database based on mapping data of monoculture samples (leafmono): 
+    '''FILTERING of CLUSTERS in the mapping database based on mapping data of monoculture samples (rootmono): 
         if too many reads of a mono sample map to other mono reference.
      This is called cluster filtering (See also: Wagemaker et al. 2020 Figure 3)'''
 
@@ -147,12 +147,12 @@ def calculate_ESA(args):
     resultFyle = open((args.output_prefix + "TMP_Clusters_Target_vs_Reason_to_remove_%s_%s_%s.txt" % (args.filter_1,args.filter_2,args.filter_3)),'w')
     wr = csv.writer(resultFyle, dialect='excel')
 
-    for index, row in df_leafmono_div.iterrows():
+    for index, row in df_rootmono_div.iterrows():
         locus = index
         max = row[-1]
         maxi = row[-1]+'_'
         number += 1
-        SUM =row.filter(regex='leafmono').sum(axis=0)
+        SUM =row.filter(regex='rootmono').sum(axis=0)
         high = row.get(max)
         ID = locus.split("_")
         item = str(ID[0]) + '_' + max
@@ -164,7 +164,7 @@ def calculate_ESA(args):
         else:
             mono = locus.split('_')
             mono = mono[0]
-            summie = df_sum_sample_leafmono[mono]
+            summie = df_sum_sample_rootmono[mono]
             test =(int(args.filter_1)/float(summie))
             if high < test:
                 getridof.append(locus)
@@ -201,7 +201,7 @@ def calculate_ESA(args):
 
     df_mono_clusters_removed = pd.read_csv(resultFyle_processed, header=None, sep='\t| |,', engine='python')
 
-    # Make a list of all the leafmono samples in the input .csv file  #
+    # Make a list of all the rootmono samples in the input .csv file  #
 
     newTargetSpecieslist = []
 
@@ -256,7 +256,7 @@ def calculate_ESA(args):
     print("clusters removed from all data           :  --- %s seconds ---" % round((time.time() - start_time),0))
 
     ''' HERE make an output with How many clusters remained and the total number of reads mapped to a 
-    leafmono after filtering'''
+    rootmono after filtering'''
 
     cmd = [""]
     log = "Number of clusters retained : %s\n"%(len(df.index))
@@ -264,8 +264,8 @@ def calculate_ESA(args):
 
     print("-")
 
-    df_leafmono2 = df.filter(regex='^Locus|^leafmono',axis=1)
-    df_leafmono2.sort_values(by='leafmono1',ascending=False)
+    df_rootmono2 = df.filter(regex='^Locus|^rootmono',axis=1)
+    df_rootmono2.sort_values(by='rootmono1',ascending=False)
 
     ''' EXPORT number of reads mapped to removed clusters '''
 

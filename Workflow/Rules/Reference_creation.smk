@@ -21,8 +21,8 @@ rule merge_monos:
         supplement="Supplement",
         outputprefix=expand("{tmp_dir}/Reference_creation/Joined/{{sample}}.notmerged",  tmp_dir=config["tmp_dir"])
     input:
-        R1=expand("{output_dir}/Preprocessing/Preprocessedmonos/{{sample}}.1.fq.gz",  output_dir=config["output_dir"]),
-        R2=expand("{output_dir}/Preprocessing/Preprocessedmonos/{{sample}}.2.fq.gz",  output_dir=config["output_dir"])
+        R1=expand("{output_dir}/Preprocessing/monos/{{sample}}.1.fq.gz",  output_dir=config["output_dir"]),
+        R2=expand("{output_dir}/Preprocessing/monos/{{sample}}.2.fq.gz",  output_dir=config["output_dir"])
     output:
         notmergedR1=temp(expand("{tmp_dir}/Reference_creation/Joined/{{sample}}.notmerged_1.fastq.gz",  tmp_dir=config["tmp_dir"])),
         notmergedR2=temp(expand("{tmp_dir}/Reference_creation/Joined/{{sample}}.notmerged_2.fastq.gz",  tmp_dir=config["tmp_dir"])),

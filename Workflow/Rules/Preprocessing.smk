@@ -80,13 +80,13 @@ rule deduplicate_trim:
 rule split_barcodes:
     params:
         run="{run}",
-        barcode_R1=config["barcode_R1"],
-        barcode_R2=config["barcode_R2"],
-        enzyme_R1=config["enzyme_R1"],
-        enzyme_R2=config["enzyme_R2"],
-        readfile_R1=config["readfile_R1"],
-        readfile_R2=config["readfile_R2"],
-        sample=config["sample"],
+        barcode_R1="Barcode_R1"
+        barcode_R2="Barcode_R2"
+        enzyme_R1="ENZ_R1",
+        enzyme_R2="ENZ_R12,
+        readfile_R1="Raw_R1",
+        readfile_R2="Raw_R2"
+        sample="Sample",
         readdir=directory(expand("{tmp_dir}/Preprocessing/Demultiplexed", tmp_dir=config["tmp_dir"]))
     input:
         barcodefile=expand("{input}/{barcodes}", input=config["input_dir"], barcodes=config["barcode_file"]),
@@ -181,7 +181,7 @@ rule demultiplex:
         process_radtags \
             -1 {input.filtered1} \
             -2 {input.filtered2} \
-            -b {output.barcodefilefiltered} \
+            -b {input.barcodefilefiltered} \
             -o {output.tmpdir} \
             -r \
             --inline_inline \
@@ -207,11 +207,11 @@ rule rename_samples:
         lambda w: {SAMPLES[w.sample]}, 
         readfile="{readfile}",
         tmp_dir=config["tmp_dir"],
-        renamedunzipped=expand("{tmp_dir}/Preprocessing/Renamed/{{sample}}.{{readfile}}.fq", tmp_dir=config["tmp_dir"], sample=SAMPLES, readfile=readfile)
+        renamedunzipped=expand("{tmp_dir}/Preprocessing/samples/{{sample}}.{{readfile}}.fq", tmp_dir=config["tmp_dir"], sample=SAMPLES, readfile=readfile)
     input:
         tmpdir=expand("{tmp_dir}/Preprocessing/Demultiplexed/{run}", tmp_dir=config["tmp_dir"], run=RUN)
     output:
-        renamed=temp(expand("{tmp_dir}/Preprocessing/Renamed/{{sample}}.{{readfile}}.fq.gz", tmp_dir=config["tmp_dir"], sample=SAMPLES, readfile=readfile))
+        renamed=temp(expand("{tmp_dir}/Preprocessing/samples/{{sample}}.{{readfile}}.fq.gz", tmp_dir=config["tmp_dir"], sample=SAMPLES, readfile=readfile))
     log:
         expand("{output_dir}/Logs/Preprocessing/rename_samples_{{sample}}_{{readfile}}.log", output_dir=config["output_dir"])
     benchmark: 
@@ -225,8 +225,7 @@ rule rename_samples:
         1
     shell:
         """
-        zcat {params.tmp_dir}/Preprocessing/Demultiplexed/*/{wildcards.sample}.{params.readfile}.fq.gz > {params.renamedunzipped} 2> {log}
-        gzip {params.renamedunzipped} 2> {log}
+        cat {params.tmp_dir}/Preprocessing/Demultiplexed/*/{wildcards.sample}.{params.readfile}.fq.gz > {output.renamed} 2> {log}
         """
 
 # To be able to properly track which segment of refseq the sample reads map on, the read headers have to be altered. This rule
@@ -234,67 +233,67 @@ rule rename_samples:
 # -----     
 # Input:    - A demultiplexed read file.
 # Output:   - A demultiplexed read file readgroups added to it's read headers.
-rule readgroup_headers: 
-    params:
-        sample="{sample}",
-        readfile="{readfile}",
-        flowcell=flowCell,
-        lane=lane
-    input:
-        read=expand("{tmp_dir}/Preprocessing/Renamed/{{sample}}.{{readfile}}.fq.gz",tmp_dir=config["tmp_dir"])
-    output:
-        readgrouped=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.{{readfile}}.fq.gz",output_dir=config["output_dir"])
-    #log: NULL
-    benchmark: 
-       "../Benchmarks/headers_{sample}_{readfile}.benchmark.tsv"
-    #conda: NULL
-    resources:
-        mem_mb= 1000,
-        runtime= 10,
-        cpus_per_task= 1
-    threads: 
-        1
-    shell:
-        """
-        if [ -f '{input.read}' ]; then
-            zcat {input.read} | 
-            cut -f1 -d ' ' | 
-            sed -e '/^@/ s/$/\tRG:Z:{params.flowcell}_{params.lane}_{params.sample}/'| 
-            gzip -c   > {output.readgrouped}
-        else
-            touch {output.readgrouped}
-        fi
-        """
+#rule readgroup_headers: 
+#    params:
+#        sample="{sample}",
+#        readfile="{readfile}",
+#        flowcell=flowCell,
+#        lane=lane
+#    input:
+#        read=expand("{tmp_dir}/Preprocessing/Renamed/{{sample}}.{{readfile}}.fq.gz",tmp_dir=config["tmp_dir"])
+#    output:
+#        readgrouped=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.{{readfile}}.fq.gz",output_dir=config["output_dir"])
+#    #log: NULL
+#    benchmark: 
+#       "../Benchmarks/headers_{sample}_{readfile}.benchmark.tsv"
+#   #conda: NULL
+#    resources:
+#        mem_mb= 1000,
+#        runtime= 10,
+#        cpus_per_task= 1
+#    threads: 
+#        1
+#    shell:
+#        """
+#        if [ -f '{input.read}' ]; then
+#            zcat {input.read} | 
+#            cut -f1 -d ' ' | 
+#            sed -e '/^@/ s/$/\tRG:Z:{params.flowcell}_{params.lane}_{params.sample}/'| 
+#            gzip -c   > {output.readgrouped}
+#        else
+#            touch {output.readgrouped}
+#        fi
+#        """
 
 # This rule re-combines all reads into two fully preprocessed read files. While these files are currently unused 
 # downstream, they are still generated to give users insight in how their input has been processed. 
 # -----     
 # Input:    - All preprocessed read files (demultiplexed), all either numbered 1 or 2.
 # Output:   - A file which contains all preprocessed reads that remain, numbered either 1 or 2.
-rule cat_all_preprocessed:
-    params:
-        readfile="{readfile}",
-        tmp_dir=expand("{tmp_dir}/Preprocessing/Readgrouped/", tmp_dir=config["tmp_dir"])
-    input:
-        readgroupedsample=expand("{tmp_dir}/Preprocessing/Readgrouped/{sample}.{{readfile}}.fq.gz",tmp_dir=config["tmp_dir"], sample=SAMPLES)
-    output:
-        allpreprocessed=expand("{output_dir}/Output/Preprocessing/Preprocessed/preprocessed_R{{readfile}}.fq.gz",  output_dir=config["output_dir"])
-    log: 
-        expand("{output_dir}/Logs/Preprocessing/cat_{{readfile}}.log", output_dir=config["output_dir"])
-    benchmark: 
-       "../Benchmarks/cat_{readfile}.benchmark.tsv"
-    #conda: NULL
-    resources:
-        mem_mb= 1000,
-        runtime= 10,
-        cpus_per_task= 1
-    threads: 
-        1
-    shell:
-        """
-        ls -v {params.tmp_dir}*.{params.readfile}.fq.gz | 
-        xargs cat  >> {output.allpreprocessed}
-        """
+#rule cat_all_preprocessed:
+#    params:
+#        readfile="{readfile}",
+#        tmp_dir=expand("{tmp_dir}/Preprocessing/Readgrouped/", tmp_dir=config["tmp_dir"])
+#    input:
+#        readgroupedsample=expand("{tmp_dir}/Preprocessing/Readgrouped/{sample}.{{readfile}}.fq.gz",tmp_dir=config["tmp_dir"], sample=SAMPLES)
+#    output:
+#        allpreprocessed=expand("{output_dir}/Output/Preprocessing/Preprocessed/preprocessed_R{{readfile}}.fq.gz",  output_dir=config["output_dir"])
+#    log: 
+#        expand("{output_dir}/Logs/Preprocessing/cat_{{readfile}}.log", output_dir=config["output_dir"])
+#    benchmark: 
+#       "../Benchmarks/cat_{readfile}.benchmark.tsv"
+#    #conda: NULL
+#    resources:
+#        mem_mb= 1000,
+#        runtime= 10,
+#        cpus_per_task= 1
+#    threads: 
+#        1
+#    shell:
+#        """
+#        ls -v {params.tmp_dir}*.{params.readfile}.fq.gz | 
+#        xargs cat  >> {output.allpreprocessed}
+#        """
 
 # Since the reference-sequence is to be constructed exclusively from reads that come from mono-samples, these sample-reads are copied to another
 # directory, where they can easily be called by reference creation rules.
@@ -303,9 +302,9 @@ rule cat_all_preprocessed:
 # Output:   - A preprocessed mono read-file, now copied to a different directory.
 rule move_monos: 
     input:
-        mono=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.{{readfile}}.fq.gz",output_dir=config["output_dir"])
+        mono=expand("{output_dir}/Preprocessing/samples/{{sample}}.{{readfile}}.fq.gz",output_dir=config["output_dir"])
     output:
-        movedmono=expand("{output_dir}/Preprocessing/Preprocessedmonos/{{sample}}.{{readfile}}.fq.gz", output_dir=config["output_dir"])
+        movedmono=expand("{output_dir}/Preprocessing/monos/{{sample}}.{{readfile}}.fq.gz", output_dir=config["output_dir"])
     log: 
         expand("{output_dir}/Logs/Preprocessing/move_monos_{{sample}}_{{readfile}}.log", output_dir=config["output_dir"])
     benchmark: 

@@ -65,8 +65,8 @@ rule mapping_Bowtie2:
         indexprefix=expand("{output_dir}/Mapping/Index/Bowtie/index", output_dir=config["output_dir"])
     input:
         index=expand("{output_dir}/Mapping/Index/Bowtie/index.1.bt2", output_dir=config["output_dir"]),
-        r1=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.1.fq.gz",output_dir=config["output_dir"]),
-        r2=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.1.fq.gz",output_dir=config["output_dir"])
+        r1=expand("{output_dir}/Preprocessing/samples/{{sample}}.1.fq.gz",output_dir=config["output_dir"]),
+        r2=expand("{output_dir}/Preprocessing/samples/{{sample}}.1.fq.gz",output_dir=config["output_dir"])
     output:
         samOut=temp(expand("{tmp_dir}/Mapping/Samout/Bowtie/mapping_sq_{{sample}}.sam",tmp_dir=config["tmp_dir"])),
         bamOut=temp(expand("{tmp_dir}/Mapping/Bamout/Bowtie/mapping_sq_{{sample}}.bam",tmp_dir=config["tmp_dir"]))
@@ -156,8 +156,8 @@ rule mapping_BWA:
         indexprefix=expand("{output_dir}/Mapping/Index/Bwa/index", output_dir=config["output_dir"])
     input:
         index=expand("{output_dir}/Mapping/Index/Bwa/index.amb", output_dir=config["output_dir"]),
-        r1=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.1.fq.gz",output_dir=config["output_dir"]),
-        r2=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.1.fq.gz",output_dir=config["output_dir"])
+        r1=expand("{output_dir}/Preprocessing/samples/{{sample}}.1.fq.gz",output_dir=config["output_dir"]),
+        r2=expand("{output_dir}/Preprocessing/samples/{{sample}}.1.fq.gz",output_dir=config["output_dir"])
     output:
         samOut=temp(expand("{tmp_dir}/Mapping/Samout/Bwa/mapping_sq_{{sample}}.sam",tmp_dir=config["tmp_dir"])),
         bamOut=temp(expand("{tmp_dir}/Mapping/Bamout/Bwa/mapping_sq_{{sample}}.bam",tmp_dir=config["tmp_dir"]))
@@ -247,8 +247,8 @@ rule mapping_Star:
     params:
         sample='{sample}',
         indexprefix=expand("{output_dir}/Mapping/Index/Star", output_dir=config["output_dir"]),
-        r1out=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.1.fq",output_dir=config["output_dir"]),
-        r2out=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.2.fq",output_dir=config["output_dir"]),
+        r1out=expand("{output_dir}/Preprocessing/samples/{{sample}}.1.fq",output_dir=config["output_dir"]),
+        r2out=expand("{output_dir}/Preprocessing/samples/{{sample}}.2.fq",output_dir=config["output_dir"]),
         logfinal=expand("{output_dir}/Mapping/{{sample}}_Log.final.out", output_dir=config["output_dir"]),
         log=expand("{output_dir}/Mapping/{{sample}}_Log.out", output_dir=config["output_dir"]),
         logprogress=expand("{output_dir}/Mapping/{{sample}}_Log.progress.out", output_dir=config["output_dir"]),
@@ -256,8 +256,8 @@ rule mapping_Star:
         logout=expand("{output_dir}/Logs/Mapping/", output_dir=config["output_dir"])
     input:
         genome=expand("{output_dir}/Mapping/Index/Star/Genome" , output_dir=config["output_dir"]),
-        r1=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.1.fq.gz",output_dir=config["output_dir"]),
-        r2=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.2.fq.gz",output_dir=config["output_dir"])
+        r1=expand("{output_dir}/Preprocessing/samples/{{sample}}.1.fq.gz",output_dir=config["output_dir"]),
+        r2=expand("{output_dir}/Preprocessing/samples/{{sample}}.2.fq.gz",output_dir=config["output_dir"])
     output:        
         samOut=temp(expand("{tmp_dir}/Mapping/Samout/Star/mapping_sq_{{sample}}.sam",tmp_dir=config["tmp_dir"])),
         bamOut=temp(expand("{tmp_dir}/Mapping/Bamout/Star/mapping_sq_{{sample}}.bam",tmp_dir=config["tmp_dir"]))

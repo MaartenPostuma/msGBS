@@ -57,10 +57,10 @@ rule all:
     input:
         #allpreprocessed=expand("{allpreprocessed_dir}/preprocessed_R{readfile}.fq.gz",  allpreprocessed_dir=config["allpreprocessed_dir"], readfile=readfile),
         #bamOut=expand("{output_dir}/Mapping/Bamout/{mapper}/mapping_rg_{sample}.bam",output_dir=config["output_dir"], mapper=MAPPER, sample=SAMPLES),
-        statscsv=expand("{output_dir}/Analysis/{mapper}/stats.csv",output_dir=config["output_dir"], mapper=MAPPER),
+        statscsv=expand("{output_dir}/Analysis/{mapper}/stats.tsv",output_dir=config["output_dir"], mapper=MAPPER),
         Data1=expand("{output_dir}/Analysis/{mapper}/Data_1_Clusters_Target_vs_Reason_to_remove_8_15_1000_summed_per_species.txt", output_dir=config["output_dir"], mapper=MAPPER),
         Data2=expand("{output_dir}/Analysis/{mapper}/Data_2_Clusters_filtered_due_to_homology_to_8_15_1000.txt", output_dir=config["output_dir"], mapper=MAPPER),
-        Data3=expand("{output_dir}/Analysis/{mapper}/Data_3_READ_COUNT_removed_CLUSTERS_SUM_8_15_1000.csv", output_dir=config["output_dir"], mapper=MAPPER),
-        Data4=expand("{output_dir}/Analysis/{mapper}/Data_4_SUM_8_15_1000.csv", output_dir=config["output_dir"], mapper=MAPPER),
-        Data5=expand("{output_dir}/Analysis/{mapper}/Data_5_SUM_MINREAD_FILTER_8_15_1000.csv", output_dir=config["output_dir"], mapper=MAPPER),
+        Data3=expand("{output_dir}/Analysis/{mapper}/Data_3_READ_COUNT_removed_CLUSTERS_SUM_8_15_1000.tsv", output_dir=config["output_dir"], mapper=MAPPER),
+        Data4=expand("{output_dir}/Analysis/{mapper}/Data_4_SUM_8_15_1000.tsv", output_dir=config["output_dir"], mapper=MAPPER),
+        Data5=expand("{output_dir}/Analysis/{mapper}/Data_5_SUM_MINREAD_FILTER_8_15_1000.tsv", output_dir=config["output_dir"], mapper=MAPPER),
         alllogs=expand("{output_dir}/logSummary/multiQClogsummary.html", output_dir=config["output_dir"])
