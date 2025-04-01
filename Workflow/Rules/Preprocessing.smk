@@ -80,8 +80,8 @@ rule deduplicate_trim:
 rule split_barcodes:
     params:
         run="{run}",
-        barcode_R1="Barcode_R1"
-        barcode_R2="Barcode_R2"
+        barcode_R1="Barcode_R1",
+        barcode_R2="Barcode_R2",
         enzyme_R1="ENZ_R1",
         enzyme_R2="ENZ_R2",
         readfile_R1="Raw_R1",
