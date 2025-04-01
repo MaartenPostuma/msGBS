@@ -28,7 +28,7 @@ rule bam_rg:
     benchmark: 
        "../Benchmarks/bam_rg_{sample}_{mapper}.benchmark.tsv"
     conda:
-        "src/Envs/bam_rg.yaml"
+        "../Envs/bam_rg.yaml"
     threads: 4
     resources:
         mem_mb= 200000,
@@ -65,7 +65,7 @@ rule bam_rg:
 #     benchmark: 
 #        "../Benchmarks/bam_merge_{mapper}.benchmark.tsv"
 #     conda: 
-#         "src/Envs/bam_merge.yaml"
+#         "../Envs/bam_merge.yaml"
 #     #threads: NULL
 #     shell:
 #         """
@@ -94,7 +94,7 @@ rule stats:
     benchmark:
        "../Benchmarks/stats_{mapper}_{sample}.benchmark.tsv"
     conda: 
-        "src/Envs/stats.yaml"
+        "../Envs/stats.yaml"
     #threads: NULL
     resources:
         mem_mb= 2000,
@@ -123,7 +123,7 @@ rule merge_stats:
     benchmark:
        "../Benchmarks/stats_{mapper}.benchmark.tsv"
     conda: 
-        "src/Envs/statsCombine.yaml"
+        "../Envs/statsCombine.yaml"
     #threads: NULL
     resources:
         mem_mb= 50000,
@@ -169,7 +169,7 @@ rule filter:
         log= expand("{output_dir}/Logs/Analysis/filter_{{mapper}}.log.log",output_dir=config["output_dir"])
     benchmark:
        "../Benchmarks/filter_{mapper}.benchmark.tsv"
-    conda: "src/Envs/filter.yaml"
+    conda: "../Envs/filter.yaml"
     resources:
         mem_mb= 50000,
         runtime= 10,
@@ -215,7 +215,7 @@ rule logging:
     benchmark:
        "../Benchmarks/logging.benchmark.tsv"
     conda:
-        "src/Envs/logging.yaml"
+        "../Envs/logging.yaml"
     #threads: NULL
     resources:
         mem_mb= 1000,
