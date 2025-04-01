@@ -65,8 +65,8 @@ rule mapping_Bowtie2:
         indexprefix=expand("{output_dir}/Mapping/Index/Bowtie/index", output_dir=config["output_dir"])
     input:
         index=expand("{output_dir}/Mapping/Index/Bowtie/index.1.bt2", output_dir=config["output_dir"]),
-        r1=expand("{output_dir}/Preprocessing/samples/{{sample}}.R1.fq.gz",output_dir=config["output_dir"]),
-        r2=expand("{output_dir}/Preprocessing/samples/{{sample}}.R2.fq.gz",output_dir=config["output_dir"])
+        r1=expand("{output_dir}/Preprocessing/samples/{{sample}}.1.fq.gz",output_dir=config["output_dir"]),
+        r2=expand("{output_dir}/Preprocessing/samples/{{sample}}.2.fq.gz",output_dir=config["output_dir"])
     output:
         samOut=temp(expand("{tmp_dir}/Mapping/Samout/Bowtie/mapping_sq_{{sample}}.sam",tmp_dir=config["tmp_dir"])),
         bamOut=temp(expand("{tmp_dir}/Mapping/Bamout/Bowtie/mapping_sq_{{sample}}.bam",tmp_dir=config["tmp_dir"]))
@@ -156,8 +156,8 @@ rule mapping_BWA:
         indexprefix=expand("{output_dir}/Mapping/Index/Bwa/index", output_dir=config["output_dir"])
     input:
         index=expand("{output_dir}/Mapping/Index/Bwa/index.amb", output_dir=config["output_dir"]),
-        r1=expand("{output_dir}/Preprocessing/samples/{{sample}}.R1.fq.gz",output_dir=config["output_dir"]),
-        r2=expand("{output_dir}/Preprocessing/samples/{{sample}}.R2.fq.gz",output_dir=config["output_dir"])
+        r1=expand("{output_dir}/Preprocessing/samples/{{sample}}.1.fq.gz",output_dir=config["output_dir"]),
+        r2=expand("{output_dir}/Preprocessing/samples/{{sample}}.2.fq.gz",output_dir=config["output_dir"])
     output:
         samOut=temp(expand("{tmp_dir}/Mapping/Samout/Bwa/mapping_sq_{{sample}}.sam",tmp_dir=config["tmp_dir"])),
         bamOut=temp(expand("{tmp_dir}/Mapping/Bamout/Bwa/mapping_sq_{{sample}}.bam",tmp_dir=config["tmp_dir"]))
