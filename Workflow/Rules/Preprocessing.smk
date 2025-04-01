@@ -207,11 +207,11 @@ rule rename_samples:
         lambda w: {SAMPLES[w.sample]}, 
         readfile="{readfile}",
         tmp_dir=config["tmp_dir"],
-        renamedunzipped=expand("{tmp_dir}/Preprocessing/samples/{{sample}}.{{readfile}}.fq", tmp_dir=config["tmp_dir"], sample=SAMPLES, readfile=readfile)
+        renamedunzipped=expand("{tmp_dir}/Preprocessing/samples/{{sample}}.{{readfile}}.fq", tmp_dir=config["tmp_dir"])
     input:
         tmpdir=expand("{tmp_dir}/Preprocessing/Demultiplexed/{run}", tmp_dir=config["tmp_dir"], run=RUN)
     output:
-        renamed=temp(expand("{tmp_dir}/Preprocessing/samples/{{sample}}.{{readfile}}.fq.gz", tmp_dir=config["tmp_dir"], sample=SAMPLES, readfile=readfile))
+        renamed=expand("{output_dir}/Preprocessing/samples/{{sample}}.{{readfile}}.fq.gz",output_dir=config["output_dir"])
     log:
         expand("{output_dir}/Logs/Preprocessing/rename_samples_{{sample}}_{{readfile}}.log", output_dir=config["output_dir"])
     benchmark: 
