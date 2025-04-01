@@ -127,7 +127,7 @@ rule merge_stats:
     #threads: NULL
     resources:
         mem_mb= 50000,
-        runtime= 10,
+        runtime= 30,
         cpus_per_task= 1          
     shell:
         """
