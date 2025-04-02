@@ -95,7 +95,7 @@ rule split_barcodes:
     threads: 
         1
     shell:
-         "Rscript ../Scripts/splitBarcode.R {input.barcodefile} {output.barcodefilefiltered}"   
+         "Rscript Scripts/splitBarcode.R {input.barcodefile} {output.barcodefilefiltered}"   
 
 
 
