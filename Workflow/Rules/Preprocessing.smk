@@ -78,23 +78,12 @@ rule deduplicate_trim:
 #           - The demultiplexed read files 
 #             [NOTE]As stated above, these files are not directly mentioned as output in the rule definition.
 rule split_barcodes:
-    params:
-        run="{run}",
-        barcode_R1="Barcode_R1",
-        barcode_R2="Barcode_R2",
-        enzyme_R1="ENZ_R1",
-        enzyme_R2="ENZ_R2",
-        readfile_R1="Raw_R1",
-        readfile_R2="Raw_R2",
-        sample="Sample",
-        readdir=directory(expand("{tmp_dir}/Preprocessing/Demultiplexed", tmp_dir=config["tmp_dir"]))
     input:
         barcodefile=expand("{input}/{barcodes}", input=config["input_dir"], barcodes=config["barcode_file"]),
     output:
         barcodefilefiltered=expand("{output_dir}/Preprocessing/Barcodesfiltered/{{run}}_barcodefiltered.tsv", output_dir=config["output_dir"]),
     log: 
         log1=expand("{output_dir}/Logs/Preprocessing/split_barcode_file_{{run}}.log", output_dir=config["output_dir"]),
-        log2=expand("{output_dir}/Logs/Preprocessing/process_radtags_{{run}}.log", output_dir=config["output_dir"])
     benchmark: 
        "../Benchmarks/split_barcode_file.benchmark_{run}.tsv"
     resources:
@@ -102,55 +91,11 @@ rule split_barcodes:
         runtime= 2,
         cpus_per_task= 1
     conda:
-        "../Envs/deduplication.yaml"
+        "../Envs/statsCombine.yaml"
     threads: 
         1
-    shell:    
-        """
-        header=$(awk 'NR==1 {{print; exit}}' {input.barcodefile})
-        content=$(awk 'NR==2 {{print; exit}}' {input.barcodefile})
-        IFS="	"; headerList=($header)
-
-        for column in "${{!headerList[@]}}"; do
-            case "${{headerList[$column]}}" in
-                {params.barcode_R1})
-                    barcodeR1Index="${{column}}"
-                    ;;
-                {params.barcode_R2})
-                    barcodeR2Index="${{column}}"
-                    ;;
-                {params.sample})
-                    sampleIndex="${{column}}"
-                    ;;
-                {params.readfile_R1})
-                    rawR1Index="${{column}}"
-                    ;;
-                {params.enzyme_R1})
-                    ER1=$( echo "$content" |cut -f $(("${{column}}" + 1)))
-                    ;;
-                {params.enzyme_R2})
-                    ER2=$( echo "$content" |cut -f $(("${{column}}" + 1)))
-                    ;;
-            esac
-        done
-        headersPassed=false
-        tail +2 {input.barcodefile} | while read line; do
-            if [ $headersPassed ]; then
-                    R1=$( echo "$line" |cut -f $(($barcodeR1Index + 1)))
-                    R2=$( echo "$line" |cut -f $(($barcodeR2Index + 1)))
-                    Sample=$( echo "$line" |cut -f $(($sampleIndex + 1)))
-                    rawR1=$( echo "$line" |cut -f $(($rawR1Index + 1)))
-                {{
-                    if [[ $rawR1 == "{params.run}_R1.fq.gz" ]]; then
-                        printf "%s\t%s\t%s\n" "$R1" "$R2" "$Sample"
-                    fi
-                }} >> {output.barcodefilefiltered}
-            else
-                header=$( echo "$line")
-                headersPassed=true
-            fi
-        done
-        """
+    shell:
+         "Rscript ../Scripts/splitBarcode.R {input.barcodefile} {output.barcodefilefiltered}"   
 
 
 
