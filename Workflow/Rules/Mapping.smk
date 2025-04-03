@@ -81,7 +81,7 @@ rule mapping_Bowtie2:
         8
     resources:
         mem_mb= 10000,
-        runtime= 60,
+        runtime= 120,
         cpus_per_task= 8   
     shell:
         """

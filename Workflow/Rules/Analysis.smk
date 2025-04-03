@@ -97,7 +97,7 @@ rule stats:
         "../Envs/stats.yaml"
     #threads: NULL
     resources:
-        mem_mb= 2000,
+        mem_mb= 4000,
         runtime= 10,
         cpus_per_task= 1       
     shell:
