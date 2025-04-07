@@ -1,4 +1,4 @@
-Barcode_R1	Barcode_R2	Sample	Raw_R1	Raw_R2	ENZ_R1	ENZ_R2	Wobble_R1	Wobble_R2	Lane	Flowcell
+Barcode_R1	Barcode_R2	Sample	rawR1	rawR2	ENZ_R1	ENZ_R2	Wobble_R1	Wobble_R2	Lane	Flowcell
 CCAGC	CCAGC	sample1	run2_R1.fq.gz	run2_R2.fq.gz	PacI	NsiI	3	3	test	test
 TGGCC	CCAGC	sample2	run2_R1.fq.gz	run2_R2.fq.gz	PacI	NsiI	3	3	test	test
 GAACC	CCAGC	sample3	run2_R1.fq.gz	run2_R2.fq.gz	PacI	NsiI	3	3	test	test

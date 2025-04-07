@@ -3,7 +3,7 @@ args = commandArgs(trailingOnly=TRUE)
 
 barcodes<-read.table(args[1],h=T,sep="\t")
 
-barcodeSub<-barcodes[grep(args[3], barcodes$Raw_R1),]
+barcodeSub<-barcodes[grep(args[3], barcodes$rawR1),]
 barcodeStacks<-data.frame(barcode1=paste0(barcodeSub$Barcode_R1   ,"C"),
                           barcode2=paste0(barcodeSub$Barcode_R2,"C"),
                           sample=barcodeSub$Sample)
