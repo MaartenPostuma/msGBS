@@ -87,7 +87,7 @@ rule split_barcodes:
     benchmark: 
        "../Benchmarks/split_barcode_file.benchmark_{run}.tsv"
     params:
-        "{run}"    
+        run="{run}"    
     resources:
         mem_mb= 1000,
         runtime= 2,
