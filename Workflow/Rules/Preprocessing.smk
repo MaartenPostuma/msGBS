@@ -86,6 +86,8 @@ rule split_barcodes:
         log1=expand("{output_dir}/Logs/Preprocessing/split_barcode_file_{{run}}.log", output_dir=config["output_dir"]),
     benchmark: 
        "../Benchmarks/split_barcode_file.benchmark_{run}.tsv"
+    params:
+        "{run}"    
     resources:
         mem_mb= 1000,
         runtime= 2,
@@ -95,7 +97,7 @@ rule split_barcodes:
     threads: 
         1
     shell:
-         "Rscript Scripts/splitBarcode.R {input.barcodefile} {output.barcodefilefiltered}"   
+         "Rscript Scripts/splitBarcode.R {input.barcodefile} {output.barcodefilefiltered} {params.run}"   
 
 
 
@@ -116,7 +118,7 @@ rule demultiplex:
         "../Envs/deduplication.yaml"
     resources:
         mem_mb= 10000,
-        runtime= 120,
+        runtime= 240,
         cpus_per_task= 8
     threads: 
         8
@@ -164,7 +166,7 @@ rule rename_samples:
     #conda: NULL
     resources:
         mem_mb= 1000,
-        runtime= 5,
+        runtime= 20,
         cpus_per_task= 1
     threads:
         1

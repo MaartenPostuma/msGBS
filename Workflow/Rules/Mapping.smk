@@ -33,7 +33,7 @@ rule mapping_Bowtie2_index:
         16
     resources:
         mem_mb= 10000,
-        runtime= 120,
+        runtime= 480,
         cpus_per_task= 16 
     shell:
         """
@@ -81,7 +81,7 @@ rule mapping_Bowtie2:
         8
     resources:
         mem_mb= 10000,
-        runtime= 120,
+        runtime= 480,
         cpus_per_task= 8   
     shell:
         """

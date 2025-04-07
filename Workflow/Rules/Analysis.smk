@@ -32,7 +32,7 @@ rule bam_rg:
     threads: 4
     resources:
         mem_mb= 200000,
-        runtime= 10,
+        runtime= 60,
         cpus_per_task= 4       
     shell:
         """
