@@ -45,7 +45,7 @@ rule blast:
         16
     resources:
         mem_mb= 100000,
-        runtime= 240,
+        runtime= 12000,
         cpus_per_task= 16
     shell:
         """
