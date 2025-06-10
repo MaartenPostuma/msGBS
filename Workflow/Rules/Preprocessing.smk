@@ -134,8 +134,8 @@ rule demultiplex:
             --inline_inline \
             --renz_1 PacI \
             --renz_2 NsiI \
-            --retain_header \
-            --disable_rad_check \
+            --retain-header \
+            --disable-rad-check \
             --threads {threads} 
             mv {output.tmpdir}/process_radtags*.log {log}
         """
