@@ -66,11 +66,11 @@ rule merge_monos:
 # Output:   - The joined reads from a mono-sample readfile.
 rule join_monos:
     params:
-        barcode_R1=config["barcode_R1"],
-        barcode_R2=config["barcode_R2"],
-        wobble_R1=config["wobble_R1"],
-        wobble_R2=config["wobble_R2"],
-        cycles=config["pcr_cycles"]
+        barcode_R1="Barcode_R1",
+        barcode_R2="Barcode_R2",
+        wobble_R1="Wobble_R1",
+        wobble_R2="Wobble_R2",
+        cycles=150
     input:
         notmergedR1=expand("{tmp_dir}/Reference_creation/Joined/{{sample}}.notmerged_1.fastq.gz",  tmp_dir=config["tmp_dir"]),
         notmergedR2=expand("{tmp_dir}/Reference_creation/Joined/{{sample}}.notmerged_2.fastq.gz",  tmp_dir=config["tmp_dir"]),
