@@ -84,7 +84,7 @@ rule join_monos:
         "../Envs/combine_reads.yaml"
     resources:
         mem_mb= 1000,
-        runtime= 10,
+        runtime= 40,
         cpus_per_task= 1
     threads:
         1
@@ -322,7 +322,7 @@ rule rename_fast:
     #conda: NULL
     resources:
         mem_mb= 10000,
-        runtime= 20,
+        runtime= 60,
         cpus_per_task= 1
     #threads: NULL
     shell: 
