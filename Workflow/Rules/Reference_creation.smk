@@ -364,21 +364,3 @@ rule rename_fast:
 # Input:    - A clustered version of the dereplicated mono-read files, however here all headers are adjusted to 
 #             contain it's origin and an index.
 # Output:   - A de-novo meta reference file containing all dereplicated & clustered mono-reads.
-rule ref_out:
-    params:
-        inputprefix=expand("{tmp_dir}/Reference_creation/Renamed/",  tmp_dir=config["tmp_dir"])
-    input:
-        renamed=expand("{tmp_dir}/Reference_creation/Renamed/{sample}.renamed.fa", tmp_dir=config["tmp_dir"], sample=MONOS)
-    output:
-        ref=expand("{output_dir}/Reference_creation/ref.fa", output_dir=config["output_dir"])
-    #log: NULL
-    benchmark:
-       "../Benchmarks/ref_out.benchmark.tsv"
-    resources:
-        mem_mb= 10000,
-        runtime= 20,
-        cpus_per_task= 1
-    shell:
-        """
-        cat {params.inputprefix}*.renamed.fa > {output.ref}
-        """

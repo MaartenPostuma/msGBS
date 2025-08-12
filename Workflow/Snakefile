@@ -63,4 +63,5 @@ rule all:
         Data3=expand("{output_dir}/Analysis/{mapper}/Data_3_READ_COUNT_removed_CLUSTERS_SUM_8_15_1000.tsv", output_dir=config["output_dir"], mapper=MAPPER),
         Data4=expand("{output_dir}/Analysis/{mapper}/Data_4_SUM_8_15_1000.tsv", output_dir=config["output_dir"], mapper=MAPPER),
         Data5=expand("{output_dir}/Analysis/{mapper}/Data_5_SUM_MINREAD_FILTER_8_15_1000.tsv", output_dir=config["output_dir"], mapper=MAPPER),
-        alllogs=expand("{output_dir}/logSummary/multiQClogsummary.html", output_dir=config["output_dir"])
+        alllogs=expand("{output_dir}/logSummary/multiQClogsummary.html", output_dir=config["output_dir"]),
+        allBlastResults=expand("{output_dir}/Blasting/blastresults.tsv", output_dir=config["output_dir"])
