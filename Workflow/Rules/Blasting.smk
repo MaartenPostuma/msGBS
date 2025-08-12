@@ -34,7 +34,7 @@ rule blast:
     input:
         ref=expand("{tmp_dir}/Reference_creation/Renamed/{{sample}}.renamed.fa", tmp_dir=config["tmp_dir"])
     output:
-        blastresults=temp(expand("{tmp_dir}/Blasting/results/{{sample}}.blastresults.tsv", tmp_dir=config["tmp_dir"]))
+        blastresults=temp(expand("{output_dir}/Blasting/results/{{sample}}.blastresults.tsv", tmp_dir=config["output_dir"]))
     log: 
         expand("{output_dir}/Logs/Blasting/{{sample}}_blast.log", output_dir=config["output_dir"])
     benchmark: 
@@ -63,9 +63,9 @@ rule blast:
 rule temp_blastref:
     input:
         ref=expand("{tmp_dir}/Reference_creation/Renamed/{{sample}}.renamed.fa", tmp_dir=config["tmp_dir"]),
-        blastresults=expand("{tmp_dir}/Blasting/results/{{sample}}.blastresults.tsv", tmp_dir=config["tmp_dir"])
+        blastresults=expand("{output_dir}/Blasting/results/{{sample}}.blastresults.tsv", tmp_dir=config["output_dir"])
     output:
-        eukaryota_ref=temp(expand("{tmp_dir}/Blasting/ref/{{sample}}/Eukaryota_ref.fa", tmp_dir=config["tmp_dir"]))
+        eukaryota_ref=temp(expand("{output_dir}/Blasting/ref/{{sample}}/Eukaryota_ref.fa", tmp_dir=config["output_dir"]))
     params:
         output_dir=config["tmp_dir"],
         sup_dir=config["sup_dir"],
@@ -92,7 +92,7 @@ rule blast_out:
     params:
         inputprefix=expand("{tmp_dir}/Reference_creation/Renamed/",  tmp_dir=config["tmp_dir"])
     input:
-        blastresults=expand("{tmp_dir}/Blasting/results/{sample}.blastresults.tsv", tmp_dir=config["tmp_dir"],sample=MONOS)
+        blastresults=expand("{output_dir}/Blasting/results/{sample}.blastresults.tsv", tmp_dir=config["output_dir"],sample=MONOS)
     output:
         ref=expand("{output_dir}/Blasting/blastresults.tsv", output_dir=config["output_dir"])
     shell:
@@ -103,9 +103,9 @@ rule blast_out:
 
 rule ref_out:
     params:
-        inputprefix=expand("{tmp_dir}/Blasting/ref/",  tmp_dir=config["tmp_dir"])
+        inputprefix=expand("{output_dir}/Blasting",  tmp_dir=config["output_dir"])
     input:
-        eukaryota_ref=expand("{tmp_dir}/Blasting/ref/{sample}/Eukaryota_ref.fa", tmp_dir=config["tmp_dir"],sample=MONOS)
+        eukaryota_ref=expand("{output_dir}/Blasting/ref/{sample}/Eukaryota_ref.fa", tmp_dir=config["output_dir"],sample=MONOS)
     output:
         ref=expand("{output_dir}/Blasting/Eukaryota_ref.fa", output_dir=config["output_dir"])
     #log: NULL
