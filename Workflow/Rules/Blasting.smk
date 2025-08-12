@@ -65,7 +65,7 @@ rule temp_blastref:
         ref=expand("{tmp_dir}/Reference_creation/Renamed/{{sample}}.renamed.fa", tmp_dir=config["tmp_dir"]),
         blastresults=expand("{output_dir}/Blasting/results/{{sample}}.blastresults.tsv", tmp_dir=config["output_dir"])
     output:
-        eukaryota_ref=temp(expand("{output_dir}/Blasting/ref/{{sample}}/Eukaryota_ref.fa", tmp_dir=config["output_dir"]))
+        eukaryota_ref=expand("{output_dir}/Blasting/ref/{{sample}}/Eukaryota_ref.fa", tmp_dir=config["output_dir"])
     params:
         output_dir=config["tmp_dir"],
         sup_dir=config["sup_dir"],
