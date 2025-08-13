@@ -195,17 +195,15 @@ rule stats:
 rule merge_stats:
     params:
         mapper=MAPPER,
-        inDir=expand("{output_dir}/Analysis/{{mapper}}/perSample/",output_dir=config["output_dir"])
+        inDirMonos=expand("{output_dir}/Analysis/{{mapper}}/monos/perSample/",output_dir=config["output_dir"]),
+        inDirNonMonos=expand("{output_dir}/Analysis/{{mapper}}/monos/perSample/",output_dir=config["output_dir"])
+
     input:
         statstsvMono=expand("{output_dir}/Analysis/{{mapper}}/{type}/perSample/{monos}.tsv",output_dir=config["output_dir"],monos=MONOS,type="monos"),
         statstsvNonMono=expand("{output_dir}/Analysis/{{mapper}}/{type}/perSample/{nonmonos}.tsv",output_dir=config["output_dir"],nonmonos=NONMONOS,type="nonmonos")
 
     output:
         statstsv=expand("{output_dir}/Analysis/{{mapper}}/stats.tsv",output_dir=config["output_dir"])
-    log: 
-        out= expand("{output_dir}/Logs/Analysis/{{type}}/stats_{{mapper}}.out.log",output_dir=config["output_dir"]),
-    benchmark:
-       "../Benchmarks/{type}/stats_{mapper}.benchmark.tsv"
     conda: 
         "../Envs/statsCombine.yaml"
     #threads: NULL
@@ -215,7 +213,5 @@ rule merge_stats:
         cpus_per_task= 1          
     shell:
         """
-        echo 'Finished mapping with {params.mapper}'  >> time.txt 
-        date +%s%N >> time.txt 
-        Rscript Scripts/combineStatsFiles.R {params.inDir} {output.statstsv} > {log.out}
+        Rscript Scripts/combineStatsFiles.R {params.inDirMonos} {output.statstsv} {params.inDirMonos} > {log.out}
         """
