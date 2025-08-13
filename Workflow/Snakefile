@@ -12,14 +12,12 @@ import os
 configfile: "../Config/config.yaml"
 
 # -- define dataframe from barcodefile.
-df = pd.read_csv(os.path.join(config["input_dir"],config["barcode_file"]), sep='\t', index_col='Sample')
-df['sample']=df.index
+df = pd.read_csv(os.path.join(config["input_dir"],config["barcode_file"]), sep='\t')
 df['run'] = df['rawR1'].str.replace("_R1.fq.gz","",regex=False)
 
 # -- define wildcards from the barcode dataframe.
-MONOS = df.index[df.index.str.contains("mono")]
-NONMONOS=df.index[~df.index.str.contains("mono")]
-SAMPLES = MONOS+NONMONOS
+MONOS = df['Sample'][df['Sample'].str.contains("mono")]
+NONMONOS=df['Sample'][~df['Sample'].str.contains("mono")]
 
 RUN = df.rawR1.str.replace("_R1.fq.gz","",regex=False).unique()
 readfile  = [1, 2]
@@ -33,20 +31,19 @@ include: "Rules/Analysis.smk"
 
 if config["ref_mode"]=="Available":
     include: "Rules/AdjustRef.smk"
-    monoFile=pd.read_csv(os.path.join(config["mono_select_loc"]), sep='\t', index_col='Monos')
-    MONOS=monoFile.index
+    monoFile=pd.read_csv("/vol/ribesecology/nielsw/constant/constant_2023-2024/select2Monos.tsv", sep='\t')
+    MONOS=monoFile['Monos']
 else:
     ref=expand("{output_dir}/Blasting/Eukaryota_ref.fa",output_dir=config["output_dir"])
     include: "Rules/Reference_creation.smk"
     include: "Rules/Blasting.smk"
 
-SAMPLES = MONOS+NONMONOS
+SAMPLES = pd.concat([MONOS,NONMONOS])
 
 
 # -- define variables from the barcode dataframe.
-lane = df.Lane[0]
-flowCell = df.Flowcell[0]
-DUPES=df.index.duplicated().any()
+
+DUPES=df['Samples'].duplicated().any()
 SAMPLES = {}
 for lane, samples in LANESAMPLE.items():
     for sample in samples:
