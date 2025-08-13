@@ -31,7 +31,7 @@ NONMONOS=df['Sample'][~df['Sample'].str.contains("mono")]
 
 RUN = df.rawR1.str.replace("_R1.fq.gz","",regex=False).unique()
 readfile  = [1, 2]
-grouped = df.groupby("run")["Sample"].apply(set)
+grouped = df.groupby("run")["sample"].apply(set)
 LANESAMPLE = grouped.to_dict()
 DEMULTIPLEXSAMPLES = {}
 for lane, samples in LANESAMPLE.items():
