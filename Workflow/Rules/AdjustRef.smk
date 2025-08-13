@@ -191,8 +191,8 @@ rule move_monos_preprocess:
         cpus_per_task= 1   
     shell:
         """
-        cp {input.monoReads_R1} {output.monoRerads_R1}
-        cp {input.monoReads_R2} {output.monoRerads_R2}
+        cp {input.monoReads_R1} {output.monoReads_R1}
+        cp {input.monoReads_R2} {output.monoReads_R2}
         """
 rule move_nonmonos_preprocess:
     input:
@@ -209,8 +209,8 @@ rule move_nonmonos_preprocess:
         cpus_per_task= 1   
     shell:
         """
-        cp {input.monoReads_R1} {output.monoRerads_R1}
-        cp {input.monoReads_R2} {output.monoRerads_R2}
+        cp {input.monoReads_R1} {output.monoReads_R1}
+        cp {input.monoReads_R2} {output.monoReads_R2}
         """
 
 rule createRef:
