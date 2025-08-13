@@ -172,7 +172,7 @@ rule rename_samples:
         1
     shell:
         """
-        cat {params.tmp_dir}/Preprocessing/Demultiplexed/*/{wildcards.sample}.{params.readfile}.fq.gz > {output.renamed} 2> {log}
+        cat {params.tmp_dir}/Preprocessing/Demultiplexed/*/{wildcards.demultiplexsamples}.{params.readfile}.fq.gz > {output.renamed} 2> {log}
         """
 
 # To be able to properly track which segment of refseq the sample reads map on, the read headers have to be altered. This rule
