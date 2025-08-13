@@ -10,6 +10,12 @@ import pandas as pd
 import os
 
 configfile: "../Config/config.yaml"
+# -- define run conditions from config.
+if config["mapper_mode"]=="All":
+    MAPPER=["Bowtie", "Bwa", "Star"]
+else:
+    MAPPER=config["mapper_mode"]
+
 
 # -- define dataframe from barcodefile.
 df = pd.read_csv(os.path.join(config["input_dir"],config["barcode_file"]), sep='\t')
@@ -50,12 +56,6 @@ SAMPLES = pd.concat([MONOS,NONMONOS])
 DUPES=df['Sample'].duplicated().any()
 
 
-# -- define run conditions from config.
-if config["mapper_mode"]=="All":
-    MAPPER=["Bowtie", "Bwa", "Star"]
-else:
-    MAPPER=config["mapper_mode"]
-MAPPER=["Bowtie"]
 
 # -- define rule all, or essentially the output goal of this pipeline.
 rule all:
