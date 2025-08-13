@@ -20,6 +20,7 @@ else:
 # -- define dataframe from barcodefile.
 df = pd.read_csv(os.path.join(config["input_dir"],config["barcode_file"]), sep='\t')
 df['run'] = df['rawR1'].str.replace("_R1.fq.gz","",regex=False)
+df['sample']=df["Sample"]
 # -- define variables from the barcode dataframe.
 
 DUPES=df['Sample'].duplicated().any()
@@ -33,8 +34,8 @@ readfile  = [1, 2]
 grouped = df.groupby("run")["Sample"].apply(set)
 LANESAMPLE = grouped.to_dict()
 DEMULTIPLEXSAMPLES = {}
-for lane, Samples in LANESAMPLE.items():
-    for sample in Samples:
+for lane, samples in LANESAMPLE.items():
+    for sample in samples:
         DEMULTIPLEXSAMPLES[sample] = lane
 
 
