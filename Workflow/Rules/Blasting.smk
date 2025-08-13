@@ -34,7 +34,7 @@ rule blast:
     input:
         ref=expand("{tmp_dir}/Reference_creation/Renamed/{{sample}}.renamed.fa", tmp_dir=config["tmp_dir"])
     output:
-        blastresults=temp(expand("{output_dir}/Blasting/results/{{sample}}.blastresults.tsv", tmp_dir=config["output_dir"]))
+        blastresults=temp(expand("{output_dir}/Blasting/results/{{sample}}.blastresults.tsv", output_dir=config["output_dir"]))
     log: 
         expand("{output_dir}/Logs/Blasting/{{sample}}_blast.log", output_dir=config["output_dir"])
     benchmark: 
