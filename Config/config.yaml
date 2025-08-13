@@ -1,6 +1,6 @@
 
 # To select which mapper to use, change this to either Bowtie, Bwa of Star. If all mappers should be used 
-mapper_mode : "All"
+mapper_mode : "Bowtie"
 # This parameter defines the name of the barcode file in the Input folder.
 barcode_file: "barcodes.tsv"
 # Below, set the location of the Input folder.
@@ -28,7 +28,8 @@ multimap_bwa    : ""
 # and the location of an csv which has the mapping stats of the monos used for the reference creation in order to do the filtering.
 ref_mode : ""
 ref_loc : ""
-stats_loc : ""
+reads_loc : ""
+mono_select_loc: ""
 # should be divisible by 4 (implementation at a later point)
 max_threads: 16
 #number of sequencing cycles
@@ -36,7 +37,7 @@ pcr_cycles        : 150
 #Minimal cluster depth
 min-depth: 2
 #Location of the blastDB
-blastDB: /vol/micro-databaes/blast"
+blastDB: /vol/micro-databases/blast"
 # sorteing
 min_unique_size : 2
 

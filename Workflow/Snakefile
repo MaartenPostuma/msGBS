@@ -17,18 +17,31 @@ df['sample']=df.index
 df['run'] = df['rawR1'].str.replace("_R1.fq.gz","",regex=False)
 
 # -- define wildcards from the barcode dataframe.
-SAMPLES = df.index
 MONOS = df.index[df.index.str.contains("mono")]
 NONMONOS=df.index[~df.index.str.contains("mono")]
+SAMPLES = MONOS+NONMONOS
+
 RUN = df.rawR1.str.replace("_R1.fq.gz","",regex=False).unique()
 readfile  = [1, 2]
 grouped = df.groupby("run")["sample"].apply(set)
 LANESAMPLE = grouped.to_dict()
 
+# -- define which rule-files to implement.
+include: "Rules/Preprocessing.smk"
+include: "Rules/Mapping.smk"
+include: "Rules/Analysis.smk"
+
 if config["ref_mode"]=="Available":
-    ref=config["ref_loc"]
+    include: "Rules/AdjustRef.smk"
+    monoFile=pd.read_csv(os.path.join(config["mono_select_loc"]), sep='\t', index_col='Monos')
+    MONOS=monoFile.index
 else:
     ref=expand("{output_dir}/Blasting/Eukaryota_ref.fa",output_dir=config["output_dir"])
+    include: "Rules/Reference_creation.smk"
+    include: "Rules/Blasting.smk"
+
+SAMPLES = MONOS+NONMONOS
+
 
 # -- define variables from the barcode dataframe.
 lane = df.Lane[0]
@@ -45,12 +58,6 @@ if config["mapper_mode"]=="All":
 else:
     MAPPER=config["mapper_mode"]
 
-# -- define which rule-files to implement.
-include: "Rules/Preprocessing.smk"
-include: "Rules/Reference_creation.smk"
-include: "Rules/Blasting.smk"
-include: "Rules/Mapping.smk"
-include: "Rules/Analysis.smk"
 
 # -- define rule all, or essentially the output goal of this pipeline.
 rule all:
