@@ -20,6 +20,9 @@ else:
 # -- define dataframe from barcodefile.
 df = pd.read_csv(os.path.join(config["input_dir"],config["barcode_file"]), sep='\t')
 df['run'] = df['rawR1'].str.replace("_R1.fq.gz","",regex=False)
+# -- define variables from the barcode dataframe.
+
+DUPES=df['Sample'].duplicated().any()
 
 # -- define wildcards from the barcode dataframe.
 MONOS = df['Sample'][df['Sample'].str.contains("mono")]
@@ -35,25 +38,24 @@ for lane, samples in LANESAMPLE.items():
         DEMULTIPLEXSAMPLES[sample] = lane
 
 
-# -- define which rule-files to implement.
-include: "Rules/Preprocessing.smk"
-include: "Rules/Mapping.smk"
-include: "Rules/Analysis.smk"
 
 if config["ref_mode"]=="Available":
-    include: "Rules/AdjustRef.smk"
     monoFile=pd.read_csv(config['mono_select_loc'], sep='\t')
     MONOS=monoFile['Monos']
+    include: "Rules/AdjustRef.smk"
+
 else:
     include: "Rules/Reference_creation.smk"
     include: "Rules/Blasting.smk"
 
 SAMPLES = pd.concat([MONOS,NONMONOS])
 
+# -- define which rule-files to implement.
+include: "Rules/Preprocessing.smk"
+include: "Rules/Mapping.smk"
+include: "Rules/Analysis.smk"
 
-# -- define variables from the barcode dataframe.
 
-DUPES=df['Sample'].duplicated().any()
 
 
 
