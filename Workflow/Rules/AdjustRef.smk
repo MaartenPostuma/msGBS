@@ -197,8 +197,8 @@ rule merge_stats:
         mapper=MAPPER,
         inDir=expand("{output_dir}/Analysis/{{mapper}}/perSample/",output_dir=config["output_dir"])
     input:
-        statstsvMono=expand("{output_dir}/Analysis/{{mapper}}/{type}/perSample/{monos}.tsv",output_dir=config["output_dir"],sample=MONOS,type="monos"),
-        statstsvNonMono=expand("{output_dir}/Analysis/{{mapper}}/{type}/perSample/{nonmonos}.tsv",output_dir=config["output_dir"],sample=NONMONOS,type="nonmonos")
+        statstsvMono=expand("{output_dir}/Analysis/{{mapper}}/{type}/perSample/{monos}.tsv",output_dir=config["output_dir"],monos=MONOS,type="monos"),
+        statstsvNonMono=expand("{output_dir}/Analysis/{{mapper}}/{type}/perSample/{nonmonos}.tsv",output_dir=config["output_dir"],nonMonos=NONMONOS,type="nonmonos")
 
     output:
         statstsv=expand("{output_dir}/Analysis/{{mapper}}/stats.tsv",output_dir=config["output_dir"])
