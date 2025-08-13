@@ -216,7 +216,6 @@ rule move_nonmonos_preprocess:
 rule createRef:
     input:
         indRef=expand("{ref_loc}/{monos}.fa",ref_loc=config["ref_loc"],monos=MONOS),
-        checkMonos=expand("{output_dir}/Preprocessing/monoCheck.txt",output_dir=config["output_dir"]),
         monoReads_R1=expand("{output_dir}/Preprocessing/samples/monos/{monos}.1.fq.gz",output_dir=config["output_dir"],monos=MONOS),
         monoReads_R2=expand("{output_dir}/Preprocessing/samples/monos/{monos}.2.fq.gz",output_dir=config["output_dir"],monos=MONOS),
     output:

@@ -44,7 +44,6 @@ if config["ref_mode"]=="Available":
     monoFile=pd.read_csv(config['mono_select_loc'], sep='\t')
     MONOS=monoFile['Monos']
     SAMPLES = pd.concat([MONOS,NONMONOS])
-    include: "Rules/Preprocessing.smk"
     include: "Rules/AdjustRef.smk"
 else:
     SAMPLES = pd.concat([MONOS,NONMONOS])
