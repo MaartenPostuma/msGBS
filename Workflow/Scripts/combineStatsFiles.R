@@ -1,16 +1,22 @@
 rm(list=ls())
 args = commandArgs(trailingOnly=TRUE)
+if (args[1]=="Available"){
 #directory<-"/vol/ribesecology/nielsw/constant/msGBS/Output/Analysis/Bowtie/perSample"
 #output<-"/vol/ribesecology/nielsw/constant/msGBS/Output/Analysis/Bowtie/stats.tsv"
-directory<-args[1]
+directoryMono<-args[1]
 output<-args[2]
-
+directoryNonMono<-args[3]
+fileListMono<-list.files(directoryMono,pattern="tsv",full.names = T)
+directoryNonMono<-list.files(directoryNonMono,pattern="tsv",full.names = T)
+fileList<-list(fileListMono,directoryNonMono)
+ }else{
+directoryMono<-args[1]
+output<-args[2]
+fileList<-list.files(directoryMono,pattern="tsv",full.names = T)
+}
 
 library("purrr")
 library(tidyverse)
-
-fileList<-list.files(directory,pattern="tsv",full.names = T)
-
 csvList<-lapply(fileList,read.table,h=T)
 csvListSub<-csvList[map(csvList, function(x) dim(x)[1]) > 0]
 removedSamples<-fileList[map(csvList, function(x) dim(x)[1]) == 0]
