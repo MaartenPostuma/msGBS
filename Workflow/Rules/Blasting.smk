@@ -105,6 +105,7 @@ rule ref_out:
     params:
         inputprefix=expand("{output_dir}/Blasting",  output_dir=config["output_dir"])
     input:
+        allBlastResults=expand("{output_dir}/Blasting/blastresults.tsv", output_dir=config["output_dir"]),
         eukaryota_ref=expand("{output_dir}/Blasting/ref/{sample}/Eukaryota_ref.fa", output_dir=config["output_dir"],sample=MONOS)
     output:
         ref=expand("{output_dir}/Blasting/Eukaryota_ref.fa", output_dir=config["output_dir"])
