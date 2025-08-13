@@ -93,16 +93,16 @@ rule mapping_Bowtie:
         indexprefix=expand("{output_dir}/Mapping/Index/Bowtie/index", output_dir=config["output_dir"])
     input:
         index=expand("{output_dir}/Mapping/Index/Bowtie/index.1.bt2", output_dir=config["output_dir"]),
-        r1=expand("{output_dir}/Preprocessing/samples/{{type}}/{{monos}}.1.fq.gz",output_dir=config["output_dir"]),
-        r2=expand("{output_dir}/Preprocessing/samples/{{type}}/{{monos}}.2.fq.gz",output_dir=config["output_dir"])
+        r1=expand("{output_dir}/Preprocessing/samples/{{type}}/{{sample}}.1.fq.gz",output_dir=config["output_dir"]),
+        r2=expand("{output_dir}/Preprocessing/samples/{{type}}/{{sample}}.2.fq.gz",output_dir=config["output_dir"])
     output:
-        samOut=temp(expand("{tmp_dir}/Mapping/Samout/Bowtie/{{type}}/mapping_sq_{{monos}}.sam",tmp_dir=config["tmp_dir"])),
-        bamOut=temp(expand("{tmp_dir}/Mapping/Bamout/Bowtie/{{type}}/mapping_sq_{{monos}}.bam",tmp_dir=config["tmp_dir"]))
+        samOut=temp(expand("{tmp_dir}/Mapping/Samout/Bowtie/{{type}}/mapping_sq_{{sample}}.sam",tmp_dir=config["tmp_dir"])),
+        bamOut=temp(expand("{tmp_dir}/Mapping/Bamout/Bowtie/{{type}}/mapping_sq_{{sample}}.bam",tmp_dir=config["tmp_dir"]))
     log: 
-        bowtie2=expand("{output_dir}/Logs/Mapping/mapping_bowtie2_{{monos}}_bt.log",output_dir=config["output_dir"]),
-        samtools=expand("{output_dir}/Logs/Mapping/mapping_bowtie2_{{monos}}_st.log",output_dir=config["output_dir"])
+        bowtie2=expand("{output_dir}/Logs/Mapping/{{type}}/mapping_bowtie2_{{sample}}_bt.log",output_dir=config["output_dir"]),
+        samtools=expand("{output_dir}/Logs/Mapping/{{type}}/mapping_bowtie2_{{sample}}_st.log",output_dir=config["output_dir"])
     benchmark:
-       "../Benchmarks/mapping_Bowtie2_{sample}.benchmark.tsv"
+       "../Benchmarks/{type}/mapping_Bowtie2_{sample}.benchmark.tsv"
     conda: 
         "../Envs/bowtie2.yaml"
     threads: 
@@ -139,9 +139,9 @@ rule bam_rg_monos:
     output:
         bamOut=expand("{output_dir}/Mapping/Bamout/{{mapper}}/{{type}}/mapping_rg_{{sample}}.bam",output_dir=config["output_dir"])
     log: 
-        expand("{output_dir}/Logs/Analysis/bam_rg_{{sample}}_{{mapper}}.log",output_dir=config["output_dir"])
+        expand("{output_dir}/Logs/Analysis/{{type}}/bam_rg_{{sample}}_{{mapper}}.log",output_dir=config["output_dir"])
     benchmark: 
-       "../Benchmarks/bam_rg_{sample}_{mapper}.benchmark.tsv"
+       "../Benchmarks/{type}/bam_rg_{sample}_{mapper}.benchmark.tsv"
     conda:
         "../Envs/bam_rg.yaml"
     threads: 4
@@ -171,10 +171,10 @@ rule stats:
     output:
         statstsv=expand("{output_dir}/Analysis/{{mapper}}/{{type}}/perSample/{{sample}}.tsv",output_dir=config["output_dir"])
     log: 
-        out= expand("{output_dir}/Logs/Analysis/stats_{{mapper}}_{{sample}}.out.log",output_dir=config["output_dir"]),
-        err= expand("{output_dir}/Logs/Analysis/stats_{{mapper}}.{{sample}}.err.log",output_dir=config["output_dir"])
+        out= expand("{output_dir}/Logs/Analysis/{{type}}/stats_{{mapper}}_{{sample}}.out.log",output_dir=config["output_dir"]),
+        err= expand("{output_dir}/Logs/Analysis/{{type}}/stats_{{mapper}}.{{sample}}.err.log",output_dir=config["output_dir"])
     benchmark:
-       "../Benchmarks/stats_{mapper}_{sample}.benchmark.tsv"
+       "../Benchmarks/{type}/stats_{mapper}_{sample}.benchmark.tsv"
     conda: 
         "../Envs/stats.yaml"
     #threads: NULL
@@ -203,9 +203,9 @@ rule merge_stats:
     output:
         statstsv=expand("{output_dir}/Analysis/{{mapper}}/stats.tsv",output_dir=config["output_dir"])
     log: 
-        out= expand("{output_dir}/Logs/Analysis/stats_{{mapper}}.out.log",output_dir=config["output_dir"]),
+        out= expand("{output_dir}/Logs/Analysis/{{type}}/stats_{{mapper}}.out.log",output_dir=config["output_dir"]),
     benchmark:
-       "../Benchmarks/stats_{mapper}.benchmark.tsv"
+       "../Benchmarks/{type}/stats_{mapper}.benchmark.tsv"
     conda: 
         "../Envs/statsCombine.yaml"
     #threads: NULL
