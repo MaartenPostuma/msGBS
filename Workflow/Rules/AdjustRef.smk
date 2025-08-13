@@ -30,8 +30,8 @@ rule check_monos:
 
 rule check_nonMonos:
     input:
-        monoReads_R1=expand("{output_dir}/Preprocessing/samples/{nonmonos}.1.fq.gz",output_dir=config["output_dir"],monos=NONMONOS),
-        monoReads_R2=expand("{output_dir}/Preprocessing/samples/{nonmonos}.2.fq.gz",output_dir=config["output_dir"],monos=NONMONOS),
+        monoReads_R1=expand("{output_dir}/Preprocessing/samples/{nonmonos}.1.fq.gz",output_dir=config["output_dir"],nonmonos=NONMONOS),
+        monoReads_R2=expand("{output_dir}/Preprocessing/samples/{nonmonos}.2.fq.gz",output_dir=config["output_dir"],nonmonos=NONMONOS),
     output:
         checkNonMonos=expand("{output_dir}/Preprocessing/nonMonoCheck.txt",output_dir=config["output_dir"])
     shell:
