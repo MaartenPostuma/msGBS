@@ -151,16 +151,16 @@ rule demultiplex:
 # Output:   - All demultiplexed read files, any duplicate sample merged into a single file. 
 rule rename_samples:
     params:
-        lambda w: {SAMPLES[w.sample]}, 
+        lambda w: {DEMULTIPLEXSAMPLES[w.sample]}, 
         readfile="{readfile}",
         tmp_dir=config["tmp_dir"],
-        renamedunzipped=expand("{tmp_dir}/Preprocessing/samples/{{sample}}.{{readfile}}.fq", tmp_dir=config["tmp_dir"])
+        renamedunzipped=expand("{tmp_dir}/Preprocessing/samples/{{demultiplexsamples}}.{{readfile}}.fq", tmp_dir=config["tmp_dir"])
     input:
         tmpdir=expand("{tmp_dir}/Preprocessing/Demultiplexed/{run}", tmp_dir=config["tmp_dir"], run=RUN)
     output:
-        renamed=expand("{output_dir}/Preprocessing/samples/{{sample}}.{{readfile}}.fq.gz",output_dir=config["output_dir"])
+        renamed=expand("{output_dir}/Preprocessing/samples/{{demultiplexsamples}}.{{readfile}}.fq.gz",output_dir=config["output_dir"])
     log:
-        expand("{output_dir}/Logs/Preprocessing/rename_samples_{{sample}}_{{readfile}}.log", output_dir=config["output_dir"])
+        expand("{output_dir}/Logs/Preprocessing/rename_samples_{{demultiplexsamples}}_{{readfile}}.log", output_dir=config["output_dir"])
     benchmark: 
        "../Benchmarks/rename_samples_{sample}_{readfile}.benchmark.tsv"
     #conda: NULL
@@ -187,9 +187,9 @@ rule rename_samples:
 #        flowcell=flowCell,
 #        lane=lane
 #    input:
-#        read=expand("{tmp_dir}/Preprocessing/Renamed/{{sample}}.{{readfile}}.fq.gz",tmp_dir=config["tmp_dir"])
+#        read=expand("{tmp_dir}/Preprocessing/Renamed/{{demultiplexsamples}}.{{readfile}}.fq.gz",tmp_dir=config["tmp_dir"])
 #    output:
-#        readgrouped=expand("{output_dir}/Preprocessing/Readgrouped/{{sample}}.{{readfile}}.fq.gz",output_dir=config["output_dir"])
+#        readgrouped=expand("{output_dir}/Preprocessing/Readgrouped/{{demultiplexsamples}}.{{readfile}}.fq.gz",output_dir=config["output_dir"])
 #    #log: NULL
 #    benchmark: 
 #       "../Benchmarks/headers_{sample}_{readfile}.benchmark.tsv"
@@ -249,11 +249,11 @@ rule rename_samples:
 # Output:   - A preprocessed mono read-file, now copied to a different directory.
 rule move_monos: 
     input:
-        mono=expand("{output_dir}/Preprocessing/samples/{{sample}}.{{readfile}}.fq.gz",output_dir=config["output_dir"])
+        mono=expand("{output_dir}/Preprocessing/samples/{{demultiplexsamples}}.{{readfile}}.fq.gz",output_dir=config["output_dir"])
     output:
-        movedmono=expand("{output_dir}/Preprocessing/monos/{{sample}}.{{readfile}}.fq.gz", output_dir=config["output_dir"])
+        movedmono=expand("{output_dir}/Preprocessing/monos/{{demultiplexsamples}}.{{readfile}}.fq.gz", output_dir=config["output_dir"])
     log: 
-        expand("{output_dir}/Logs/Preprocessing/move_monos_{{sample}}_{{readfile}}.log", output_dir=config["output_dir"])
+        expand("{output_dir}/Logs/Preprocessing/move_monos_{{demultiplexsamples}}_{{readfile}}.log", output_dir=config["output_dir"])
     benchmark: 
        "../Benchmarks/move_monos_{sample}_{readfile}.benchmark.tsv"
     #conda: NULL

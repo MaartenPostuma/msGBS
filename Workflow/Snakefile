@@ -23,6 +23,11 @@ RUN = df.rawR1.str.replace("_R1.fq.gz","",regex=False).unique()
 readfile  = [1, 2]
 grouped = df.groupby("run")["Sample"].apply(set)
 LANESAMPLE = grouped.to_dict()
+DEMULTIPLEXSAMPLES = {}
+for lane, samples in LANESAMPLE.items():
+    for sample in samples:
+        DEMULTIPLEXSAMPLES[sample] = lane
+
 
 # -- define which rule-files to implement.
 include: "Rules/Preprocessing.smk"
@@ -43,10 +48,7 @@ SAMPLES = pd.concat([MONOS,NONMONOS])
 # -- define variables from the barcode dataframe.
 
 DUPES=df['Sample'].duplicated().any()
-SAMPLES = {}
-for lane, samples in LANESAMPLE.items():
-    for sample in samples:
-        SAMPLES[sample] = lane
+
 
 # -- define run conditions from config.
 if config["mapper_mode"]=="All":
