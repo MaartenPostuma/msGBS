@@ -19,8 +19,8 @@ rule move_monos_preprocess:
     
 rule createRef:
     input:
-        monoReads_R1=expand("{output_dir}/Preprocessing/samples/{samples}.1.fq.gz",output_dir=config["output_dir"],monos=SAMPLES),
-        monoReads_R2=expand("{output_dir}/Preprocessing/samples/{samples}.2.fq.gz",output_dir=config["output_dir"],monos=SAMPLES),
+        monoReads_R1=expand("{output_dir}/Preprocessing/samples/{samples}.1.fq.gz",output_dir=config["output_dir"],samples=SAMPLES),
+        monoReads_R2=expand("{output_dir}/Preprocessing/samples/{samples}.2.fq.gz",output_dir=config["output_dir"],samples=SAMPLES),
         indRef=expand("{ref_loc}/{monos}.fa",ref_loc=config["ref_loc"],monos=MONOS)
     output:
         ref=expand("{output_dir}/Blasting/Eukaryota_ref.fa",output_dir=config["output_dir"])
