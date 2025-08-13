@@ -35,7 +35,7 @@ LANESAMPLE = grouped.to_dict()
 DEMULTIPLEXSAMPLES = {}
 for lane, Samples in LANESAMPLE.items():
     for sample in Samples:
-        DEMULTIPLEXSAMPLES[ample] = lane
+        DEMULTIPLEXSAMPLES[sample] = lane
 
 
 
