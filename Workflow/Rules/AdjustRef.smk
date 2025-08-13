@@ -16,16 +16,11 @@ rule move_monos_preprocess:
         cp {input.monoReads_R1} {output.monoRerads_R1}
         cp {input.monoReads_R2} {output.monoRerads_R2}
         """
-rule checkNonMonos:
+
+rule createRef:
     input:
         demultiReads_R1=expand("{output_dir}/Preprocessing/samples/{nonmonos}.1.fq.gz",output_dir=config["output_dir"],nonmonos=NONMONOS),
         demultiReads_R2=expand("{output_dir}/Preprocessing/samples/{nonmonos}.2.fq.gz",output_dir=config["output_dir"],nonmonos=NONMONOS),
-    output:
-        expand("{output_dir}/Preprocessing/nonMonosAreHere.tsv",config["output_dir"])
-    shell:
-        """echo "test" > {output} """
-rule createRef:
-    input:
         monoReads_R1=expand("{output_dir}/Preprocessing/samples/{monos}.1.fq.gz",output_dir=config["output_dir"],monos=MONOS),
         monoReads_R2=expand("{output_dir}/Preprocessing/samples/{monos}.2.fq.gz",output_dir=config["output_dir"],monos=MONOS),
         indRef=expand("{ref_loc}/{monos}.fa",ref_loc=config["ref_loc"],monos=MONOS)
