@@ -19,7 +19,7 @@ rule mapping_Bowtie2_index:
     params: 
         indexprefix=expand("{output_dir}/Mapping/Index/Bowtie/index", output_dir=config["output_dir"])
     input: 
-        refblasted=ref
+        refblasted=expand("{output_dir}/Blasting/Eukaryota_ref.fa",output_dir=config["output_dir"])
     output:
         index=expand("{output_dir}/Mapping/Index/Bowtie/index.1.bt2", output_dir=config["output_dir"])
     log:
@@ -113,7 +113,7 @@ rule mapping_bwa_index:
     params: 
         indexprefix=expand("{output_dir}/Mapping/Index/Bwa", output_dir=config["output_dir"])
     input: 
-        refblasted=ref
+        refblasted=expand("{output_dir}/Blasting/Eukaryota_ref.fa",output_dir=config["output_dir"])
     output:
         index=expand("{output_dir}/Mapping/Index/Bwa/index.amb", output_dir=config["output_dir"])
     log: 
@@ -203,7 +203,7 @@ rule mapping_star_index:
         indextemp=expand("../Misc/Mapping/Indexed/Star"),
         ram=config["star_ram"]
     input:
-        refblasted=ref
+        refblasted=expand("{output_dir}/Blasting/Eukaryota_ref.fa",output_dir=config["output_dir"])
     output:
         genome=expand("{output_dir}/Mapping/Index/Star/Genome" , output_dir=config["output_dir"])
     log: 

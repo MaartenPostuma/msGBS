@@ -31,10 +31,9 @@ include: "Rules/Analysis.smk"
 
 if config["ref_mode"]=="Available":
     include: "Rules/AdjustRef.smk"
-    monoFile=pd.read_csv("/vol/ribesecology/nielsw/constant/constant_2023-2024/select2Monos.tsv", sep='\t')
+    monoFile=pd.read_csv(config['mono_select_loc'], sep='\t')
     MONOS=monoFile['Monos']
 else:
-    ref=expand("{output_dir}/Blasting/Eukaryota_ref.fa",output_dir=config["output_dir"])
     include: "Rules/Reference_creation.smk"
     include: "Rules/Blasting.smk"
 
