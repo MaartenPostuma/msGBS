@@ -21,7 +21,7 @@ NONMONOS=df['Sample'][~df['Sample'].str.contains("mono")]
 
 RUN = df.rawR1.str.replace("_R1.fq.gz","",regex=False).unique()
 readfile  = [1, 2]
-grouped = df.groupby("run")["sample"].apply(set)
+grouped = df.groupby("run")["Sample"].apply(set)
 LANESAMPLE = grouped.to_dict()
 
 # -- define which rule-files to implement.
@@ -43,7 +43,7 @@ SAMPLES = pd.concat([MONOS,NONMONOS])
 
 # -- define variables from the barcode dataframe.
 
-DUPES=df['Samples'].duplicated().any()
+DUPES=df['Sample'].duplicated().any()
 SAMPLES = {}
 for lane, samples in LANESAMPLE.items():
     for sample in samples:
