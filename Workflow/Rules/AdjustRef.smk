@@ -392,3 +392,83 @@ rule merge_stats:
         """
         Rscript Scripts/combineStatsFiles.R {params.inDirMonos} {output.statstsv} {params.inDirMonos} > {log.out}
         """
+rule filter:
+    params: 
+        mapper=MAPPER,
+        filter_1=config["filter_1"],
+        filter_2=config["filter_2"],
+        filter_3=config["filter_3"],
+        outprefix=expand("{output_dir}/Analysis/{{mapper}}/",output_dir=config["output_dir"])
+    input: 
+        statstsv=expand("{output_dir}/Analysis/{{mapper}}/stats.tsv",output_dir=config["output_dir"])
+    output:
+        Data1=expand("{output_dir}/Analysis/{{mapper}}/Data_1_Clusters_Target_vs_Reason_to_remove_8_15_1000_summed_per_species.txt", output_dir=config["output_dir"]),
+        Data2=expand("{output_dir}/Analysis/{{mapper}}/Data_2_Clusters_filtered_due_to_homology_to_8_15_1000.txt", output_dir=config["output_dir"]),
+        Data3=expand("{output_dir}/Analysis/{{mapper}}/Data_3_READ_COUNT_removed_CLUSTERS_SUM_8_15_1000.tsv", output_dir=config["output_dir"]),
+        Data4=expand("{output_dir}/Analysis/{{mapper}}/Data_4_SUM_8_15_1000.tsv", output_dir=config["output_dir"]),
+        Data5=expand("{output_dir}/Analysis/{{mapper}}/Data_5_SUM_MINREAD_FILTER_8_15_1000.tsv", output_dir=config["output_dir"])
+    log: 
+        out= expand("{output_dir}/Logs/Analysis/filter_{{mapper}}.out.log",output_dir=config["output_dir"]), 
+        err= expand("{output_dir}/Logs/Analysis/filter_{{mapper}}.err.log",output_dir=config["output_dir"]),
+        log= expand("{output_dir}/Logs/Analysis/filter_{{mapper}}.log.log",output_dir=config["output_dir"])
+    benchmark:
+       "../Benchmarks/filter_{mapper}.benchmark.tsv"
+    conda: "../Envs/filter.yaml"
+    resources:
+        mem_mb= 50000,
+        runtime= 10,
+        cpus_per_task= 1       
+    shell:
+        """
+        python Scripts/Parse_tsv.py \
+            -i {input.statstsv} \
+            -log {log.log} \
+            -f1 {params.filter_1} \
+            -f2 {params.filter_2} \
+            -f3 {params.filter_3} \
+            -op {params.outprefix} \
+            > {log.out} \
+            2> {log.err}
+        """
+
+# Finally, this rule attempts to summarize the results/execution success of a number of rules in this pipeline
+# by using MultiQC over all generated logs. Granted, this skips over the majority of these logs, as 
+# most of them are irrelevant, empty or perhaps only contain log-data originating from rules
+# that generate logs that MultiQC is unable to parse.
+# -----     
+# Input:    - The files discussing or displaying specific data after applying user-defined filters to the tsv file.
+#             [NOTE] These files are not actually used by this rule, and are only defined as input because 
+#                    the existence of these files confirms the completion of the entire pipeline, which would in turn
+#                    mean all log-files are available to parse at that moment.
+# Output:   - A MultiQC output file in HTML format, summarizing all data it could parse from the entirity
+#             of the log folder at the time of executing the command. 
+rule logging:
+    params:
+        logdir=expand("{output_dir}/Logs/", output_dir=config["output_dir"])
+    input:
+        Data1=expand("{output_dir}/Analysis/{mapper}/Data_1_Clusters_Target_vs_Reason_to_remove_8_15_1000_summed_per_species.txt", output_dir=config["output_dir"], mapper=MAPPER),
+        Data2=expand("{output_dir}/Analysis/{mapper}/Data_2_Clusters_filtered_due_to_homology_to_8_15_1000.txt", output_dir=config["output_dir"], mapper=MAPPER),
+        Data3=expand("{output_dir}/Analysis/{mapper}/Data_3_READ_COUNT_removed_CLUSTERS_SUM_8_15_1000.tsv", output_dir=config["output_dir"], mapper=MAPPER),
+        Data4=expand("{output_dir}/Analysis/{mapper}/Data_4_SUM_8_15_1000.tsv", output_dir=config["output_dir"], mapper=MAPPER),
+        Data5=expand("{output_dir}/Analysis/{mapper}/Data_5_SUM_MINREAD_FILTER_8_15_1000.tsv", output_dir=config["output_dir"], mapper=MAPPER)
+    output:
+        alllogs=expand("{output_dir}/logSummary/multiQClogsummary.html", output_dir=config["output_dir"])
+    log:
+        out= expand("{output_dir}/Logs/Analysis/logging.out.log",output_dir=config["output_dir"]),
+        err= expand("{output_dir}/Logs/Analysis/logging.err.log",output_dir=config["output_dir"])
+    benchmark:
+       "../Benchmarks/logging.benchmark.tsv"
+    conda:
+        "../Envs/logging.yaml"
+    #threads: NULL
+    resources:
+        mem_mb= 1000,
+        runtime= 10,
+        cpus_per_task= 1          
+    shell:
+        """
+        multiqc {params.logdir} \
+            -n {output.alllogs} \
+            > {log.out} \
+            2> {log.err}
+        """
