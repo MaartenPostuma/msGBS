@@ -151,7 +151,7 @@ rule demultiplex:
 # Output:   - All demultiplexed read files, any duplicate sample merged into a single file. 
 rule rename_samples:
     params:
-        lambda w: {DEMULTIPLEXSAMPLES[w.sample]}, 
+        lambda w: {DEMULTIPLEXSAMPLES[w.demultiplexsamples]}, 
         readfile="{readfile}",
         tmp_dir=config["tmp_dir"],
         renamedunzipped=expand("{tmp_dir}/Preprocessing/samples/{{demultiplexsamples}}.{{readfile}}.fq", tmp_dir=config["tmp_dir"])
