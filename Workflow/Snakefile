@@ -33,9 +33,9 @@ readfile  = [1, 2]
 grouped = df.groupby("run")["Sample"].apply(set)
 LANESAMPLE = grouped.to_dict()
 DEMULTIPLEXSAMPLES = {}
-for lane, samples in LANESAMPLE.items():
-    for sample in samples:
-        DEMULTIPLEXSAMPLES[sample] = lane
+for lane, Samples in LANESAMPLE.items():
+    for sample in Samples:
+        DEMULTIPLEXSAMPLES[ample] = lane
 
 
 
