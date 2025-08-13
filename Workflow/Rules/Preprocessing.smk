@@ -162,7 +162,7 @@ rule rename_samples:
     log:
         expand("{output_dir}/Logs/Preprocessing/rename_samples_{{demultiplexsamples}}_{{readfile}}.log", output_dir=config["output_dir"])
     benchmark: 
-       "../Benchmarks/rename_samples_{sample}_{readfile}.benchmark.tsv"
+       "../Benchmarks/rename_samples_{demultiplexsamples}_{readfile}.benchmark.tsv"
     #conda: NULL
     resources:
         mem_mb= 1000,
@@ -182,7 +182,7 @@ rule rename_samples:
 # Output:   - A demultiplexed read file readgroups added to it's read headers.
 #rule readgroup_headers: 
 #    params:
-#        sample="{sample}",
+#        sample="{demultiplexsamples}",
 #        readfile="{readfile}",
 #        flowcell=flowCell,
 #        lane=lane
@@ -192,7 +192,7 @@ rule rename_samples:
 #        readgrouped=expand("{output_dir}/Preprocessing/Readgrouped/{{demultiplexsamples}}.{{readfile}}.fq.gz",output_dir=config["output_dir"])
 #    #log: NULL
 #    benchmark: 
-#       "../Benchmarks/headers_{sample}_{readfile}.benchmark.tsv"
+#       "../Benchmarks/headers_{demultiplexsamples}_{readfile}.benchmark.tsv"
 #   #conda: NULL
 #    resources:
 #        mem_mb= 1000,
@@ -222,7 +222,7 @@ rule rename_samples:
 #        readfile="{readfile}",
 #        tmp_dir=expand("{tmp_dir}/Preprocessing/Readgrouped/", tmp_dir=config["tmp_dir"])
 #    input:
-#        readgroupedsample=expand("{tmp_dir}/Preprocessing/Readgrouped/{sample}.{{readfile}}.fq.gz",tmp_dir=config["tmp_dir"], sample=SAMPLES)
+#        readgroupedsample=expand("{tmp_dir}/Preprocessing/Readgrouped/{demultiplexsamples}.{{readfile}}.fq.gz",tmp_dir=config["tmp_dir"], sample=SAMPLES)
 #    output:
 #        allpreprocessed=expand("{output_dir}/Output/Preprocessing/Preprocessed/preprocessed_R{{readfile}}.fq.gz",  output_dir=config["output_dir"])
 #    log: 
@@ -255,7 +255,7 @@ rule move_monos:
     log: 
         expand("{output_dir}/Logs/Preprocessing/move_monos_{{demultiplexsamples}}_{{readfile}}.log", output_dir=config["output_dir"])
     benchmark: 
-       "../Benchmarks/move_monos_{sample}_{readfile}.benchmark.tsv"
+       "../Benchmarks/move_monos_{demultiplexsamples}_{readfile}.benchmark.tsv"
     #conda: NULL
     resources:
         mem_mb= 1000,
