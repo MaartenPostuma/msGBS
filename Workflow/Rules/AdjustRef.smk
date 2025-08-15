@@ -390,7 +390,7 @@ rule merge_stats:
         cpus_per_task= 1          
     shell:
         """
-        Rscript Scripts/combineStatsFiles.R {params.inDirMonos} {output.statstsv} {params.inDirMonos} 
+        Rscript Scripts/combineStatsFiles.R {params.inDirMonos} {output.statstsv} {params.inDirNonMonos} 
         """
 rule filter:
     params: 
