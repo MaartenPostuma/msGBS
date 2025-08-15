@@ -98,7 +98,7 @@ rule stats:
     #threads: NULL
     resources:
         mem_mb= 4000,
-        runtime= 10,
+        runtime= 60,
         cpus_per_task= 1       
     shell:
         """
@@ -127,7 +127,7 @@ rule merge_stats:
     #threads: NULL
     resources:
         mem_mb= 50000,
-        runtime= 30,
+        runtime= 120,
         cpus_per_task= 1          
     shell:
         """
@@ -172,7 +172,7 @@ rule filter:
     conda: "../Envs/filter.yaml"
     resources:
         mem_mb= 50000,
-        runtime= 10,
+        runtime= 120,
         cpus_per_task= 1       
     shell:
         """

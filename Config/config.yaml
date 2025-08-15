@@ -13,7 +13,7 @@ sup_dir       : "Supplement"
 
 # To change the multimap, edit the number after k or c, depending on which mapper(s) should be used. If multimapping should 
 # be turned off, this should be an empty string.
-multimap_bowtie : ""
+multimap_bowtie : "-k 10"
 multimap_bwa    : ""
 
 

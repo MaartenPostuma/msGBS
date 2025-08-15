@@ -12,7 +12,7 @@ start_time = time.time()
 
 # THIS script is adjusted for the new msGBS Snakemake pipeline 2024
 
-# It uses the rootmono read mapping to execute the cluster filtering
+# It uses the mono read mapping to execute the cluster filtering
 
 ### Default filter parameters : ###
 #   Filter 1 : 4  # effectively this means that a minimum of 4 mapped reads (total over all samples) are needed
@@ -22,9 +22,9 @@ start_time = time.time()
 #                      This taxonomic uninformative clusters.
 #   Filter 3 : 1000 # min reads per samples to be retained (applied later in this script)
 
-# names of mono samples         : rootmono1, rootmono2, rootmono3 ...
+# names of mono samples         : mono1, mono2, mono3 ...
 #
-# names of reference contigs    : rootmono1_1, rootmono1_2, etc...
+# names of reference contigs    : mono1_1, mono1_2, etc...
 
 simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
 pd.set_option('display.max_columns', 1000)
@@ -35,7 +35,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='morph msGBS stats into species percentages (after filtering)')
     #input files
     parser.add_argument('-i', '--input',
-                        help='tab delimited .csv input file as produced by msGBS_STATS.py')
+                        help='tab delimited .tsv input file as produced by msGBS_STATS.py')
     parser.add_argument('-op', '--output_prefix',
                         help='general output location (folder) and first part of name that endswith _'
                              'example: /Users/NielsWagemaker/SGBS_NIELS/pilot_3/mapping_DINA_OKT_2024_')
@@ -52,7 +52,7 @@ def parse_args():
 
     #create suffix argument from filter arguments
     parser.add_argument('-os', '--output_suffix',
-                        help='final part of final output endswith .csv',default='%s_%s_%s'%(args.filter_1,args.filter_2,args.filter_3))
+                        help='final part of final output endswith .tsv',default='%s_%s_%s'%(args.filter_1,args.filter_2,args.filter_3))
     args = parser.parse_args()
 
     return args
@@ -102,28 +102,31 @@ def calculate_ESA(args):
     print("calculate Estimated Species Abundance")
     print("reading input file")
 
-    print("start loading .csv file                  :  --- %s seconds ---" % round((time.time() - start_time),0))
+    print("start loading .tsv file                  :  --- %s seconds ---" % round((time.time() - start_time),0))
 
     df = pd.read_csv(args.input, sep='\t| |;', engine='python')
 
     logstring = str("ready \n\n")
     logstring += str("time finished : %s\n"% datetime.datetime.now())
-    logstring += str("Start: remove duplicate rootmono samples")
+    logstring += str("Start: remove duplicate mono samples")
 
     cmd = [""]
     log = logstring
     run_subprocess(cmd,args,log)
+    df_mono = df.filter(regex='^Locus|^.*mono', axis=1)
 
-    df_rootmono = df.filter(regex='^Locus|^rootmono', axis=1)
-
-    df_rootmono.set_index('Locus', inplace=True)
-    df_sum_sample_rootmono = df_rootmono.sum(axis=0)
-    df_rootmono_div = df_rootmono.div(df_sum_sample_rootmono.squeeze())
-    df_rootmono_div['max']=df_rootmono_div.idxmax(axis=1)
+    df_mono.set_index('Locus', inplace=True)
+    df_sum_sample_mono = df_mono.sum(axis=0)
+    df_mono_div = df_mono.div(df_sum_sample_mono.squeeze())
+    try:
+        df_mono_div['max']=df_mono_div.idxmax(axis=1)
+    except ValueError:
+        print("Make sure only mono samples contain 'mono' in their names. Check if they end in mono as well, as this is required for this script to function properly. Please check input and re-run filtering...")
+        exit()
     getridof=[]
     df.set_index('Locus', inplace=True)
 
-    '''FILTERING of CLUSTERS in the mapping database based on mapping data of monoculture samples (rootmono): 
+    '''FILTERING of CLUSTERS in the mapping database based on mapping data of monoculture samples (mono): 
         if too many reads of a mono sample map to other mono reference.
      This is called cluster filtering (See also: Wagemaker et al. 2020 Figure 3)'''
 
@@ -140,19 +143,19 @@ def calculate_ESA(args):
 
     ### The below file is created to be able to asses which clusters are discarded and why.... are there mistakes in
     ### the mono's (due to pollution of samples swapping) or are they causing problemns due to high homology to closely
-    ### related species). The file is later processed to get an overview (deleted_clusters_max_%s_%s_%s_processed.csv)
+    ### related species). The file is later processed to get an overview (deleted_clusters_max_%s_%s_%s_processed.tsv)
 
     print("start_cluster_filtering                  :  --- %s seconds ---" % round((time.time() - start_time),0))
 
     resultFyle = open((args.output_prefix + "TMP_Clusters_Target_vs_Reason_to_remove_%s_%s_%s.txt" % (args.filter_1,args.filter_2,args.filter_3)),'w')
     wr = csv.writer(resultFyle, dialect='excel')
 
-    for index, row in df_rootmono_div.iterrows():
+    for index, row in df_mono_div.iterrows():
         locus = index
         max = row[-1]
         maxi = row[-1]+'_'
         number += 1
-        SUM =row.filter(regex='rootmono').sum(axis=0)
+        SUM =row.filter(regex='mono').sum(axis=0)
         high = row.get(max)
         ID = locus.split("_")
         item = str(ID[0]) + '_' + max
@@ -164,7 +167,7 @@ def calculate_ESA(args):
         else:
             mono = locus.split('_')
             mono = mono[0]
-            summie = df_sum_sample_rootmono[mono]
+            summie = df_sum_sample_mono[mono]
             test =(int(args.filter_1)/float(summie))
             if high < test:
                 getridof.append(locus)
@@ -201,7 +204,7 @@ def calculate_ESA(args):
 
     df_mono_clusters_removed = pd.read_csv(resultFyle_processed, header=None, sep='\t| |,', engine='python')
 
-    # Make a list of all the rootmono samples in the input .csv file  #
+    # Make a list of all the mono samples in the input .tsv file  #
 
     newTargetSpecieslist = []
 
@@ -256,7 +259,7 @@ def calculate_ESA(args):
     print("clusters removed from all data           :  --- %s seconds ---" % round((time.time() - start_time),0))
 
     ''' HERE make an output with How many clusters remained and the total number of reads mapped to a 
-    rootmono after filtering'''
+    mono after filtering'''
 
     cmd = [""]
     log = "Number of clusters retained : %s\n"%(len(df.index))
@@ -264,8 +267,8 @@ def calculate_ESA(args):
 
     print("-")
 
-    df_rootmono2 = df.filter(regex='^Locus|^rootmono',axis=1)
-    df_rootmono2.sort_values(by='rootmono1',ascending=False)
+    df_mono2 = df.filter(regex='^Locus|^.*mono',axis=1)
+    df_mono2.sort_values(by=df_mono2.iloc[0].name.split("_")[0],ascending=False)
 
     ''' EXPORT number of reads mapped to removed clusters '''
 
@@ -284,16 +287,16 @@ def calculate_ESA(args):
     ''' Intermezzo to include the retained number of reads to the removed reads '''
 
     df_removed_sum_T['Retained_Total'] = df_sum['Total']
-    csv_name = (args.output_prefix + 'Data_3_READ_COUNT_removed_CLUSTERS_SUM_%s.csv'%(args.output_suffix))
+    csv_name = (args.output_prefix + 'Data_3_READ_COUNT_removed_CLUSTERS_SUM_%s.tsv'%(args.output_suffix))
     df_removed_sum_T.to_csv(csv_name,sep='\t' , decimal =',')
     df_sum = df_sum.reset_index()
-    csv_name = (args.output_prefix + 'Data_4_SUM_%s.csv'%(args.output_suffix))
+    csv_name = (args.output_prefix + 'Data_4_SUM_%s.tsv'%(args.output_suffix))
     df_sum.to_csv(csv_name,sep='\t' , decimal =',')
 
     # Filter minimum number of reads per sample: #
     print("start application of filter f3 (minimum of %s reads per sample) :"%args.filter_3)
     df_sum = df_sum[df_sum['Total'] > int(args.filter_3)]
-    csv_name = (args.output_prefix + 'Data_5_SUM_MINREAD_FILTER_%s.csv'%(args.output_suffix))
+    csv_name = (args.output_prefix + 'Data_5_SUM_MINREAD_FILTER_%s.tsv'%(args.output_suffix))
     df_sum.to_csv(csv_name,sep='\t' , decimal =',')
 
     print("finished save final output               :  --- %s seconds ---" % round((time.time() - start_time),0))
@@ -311,5 +314,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
