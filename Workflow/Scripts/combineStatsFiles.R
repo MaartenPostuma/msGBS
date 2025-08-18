@@ -1,8 +1,11 @@
 rm(list=ls())
 args = commandArgs(trailingOnly=TRUE)
+#args<-c()
+#args[1]<-"/vol/ribesecology/nielsw/constant/constant_2023-2024/output/Analysis/Bowtie/monos/perSample/"
+#args[2]<-"/vol/ribesecology/nielsw/constant/constant_2023-2024/output/Analysis/Bowtie/stats.tsv"
+#args[3]<-"/vol/ribesecology/nielsw/constant/constant_2023-2024/output/Analysis/Bowtie/nonmonos/perSample/"
+
 if (grepl("perSample",args[3])){
-#directory<-"/vol/ribesecology/nielsw/constant/msGBS/Output/Analysis/Bowtie/perSample"
-#output<-"/vol/ribesecology/nielsw/constant/msGBS/Output/Analysis/Bowtie/stats.tsv"
 directoryMono<-args[1]
 output<-args[2]
 directoryNonMono<-args[3]
