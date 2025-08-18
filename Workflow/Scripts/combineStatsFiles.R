@@ -1,6 +1,6 @@
 rm(list=ls())
 args = commandArgs(trailingOnly=TRUE)
-if (is.vector(args[3])){
+if (grepl("perSample",args[3])){
 #directory<-"/vol/ribesecology/nielsw/constant/msGBS/Output/Analysis/Bowtie/perSample"
 #output<-"/vol/ribesecology/nielsw/constant/msGBS/Output/Analysis/Bowtie/stats.tsv"
 directoryMono<-args[1]
@@ -8,7 +8,7 @@ output<-args[2]
 directoryNonMono<-args[3]
 fileListMono<-list.files(directoryMono,pattern="tsv",full.names = T)
 directoryNonMono<-list.files(directoryNonMono,pattern="tsv",full.names = T)
-fileList<-list(fileListMono,directoryNonMono)
+fileList<-c(fileListMono,directoryNonMono)
  }else{
 directoryMono<-args[1]
 output<-args[2]
