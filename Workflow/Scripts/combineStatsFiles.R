@@ -1,6 +1,6 @@
 rm(list=ls())
 args = commandArgs(trailingOnly=TRUE)
-if (is.character(args[3])){
+if (is.vector(args[3])){
 #directory<-"/vol/ribesecology/nielsw/constant/msGBS/Output/Analysis/Bowtie/perSample"
 #output<-"/vol/ribesecology/nielsw/constant/msGBS/Output/Analysis/Bowtie/stats.tsv"
 directoryMono<-args[1]
