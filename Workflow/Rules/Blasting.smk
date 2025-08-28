@@ -55,6 +55,7 @@ rule blast:
             -db {params.blastDB}/nt \
             -out {output.blastresults} \
             -max_target_seqs 1 \
+            -max_hsps 1 \
             -num_threads {threads} \
             -outfmt '6 qseqid sseqid pident evalue bitscore sskingdom sscinames length sstart send' \
             2> {log}
