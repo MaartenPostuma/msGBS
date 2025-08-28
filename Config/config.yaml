@@ -24,7 +24,7 @@ multimap_bwa    : ""
 
 # ref_mode allows the implementation of an already existing reference. 
 # the default is Create where the reference is created from the monos in the input reads
-# If the reference is Available ref_mode should be set "present" after which the location of the reference (ref_loc)
+# If the reference is Available ref_mode should be set "Available" after which the location of the reference (ref_loc)
 # and the location of an csv which has the mapping stats of the monos used for the reference creation in order to do the filtering.
 ref_mode : ""
 ref_loc : ""
