@@ -31,7 +31,7 @@ out[is.na(out)]<-0
 colnames(out)<-sub("^X","",colnames(out))
 
 write.table(out,output,row.names=F, sep='\t', quote=F)
-if length(removedSamples>=1){
+if (length(removedSamples>=1)){
 print(removedSamples)
 write.table(removedSamples,paste0(output,"removedSamples.txt"))
 }
