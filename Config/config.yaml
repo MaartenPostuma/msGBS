@@ -37,7 +37,7 @@ pcr_cycles        : 150
 #Minimal cluster depth
 min-depth: 2
 #Location of the blastDB
-blastDB: /vol/micro-databases/blast"
+blastDB: "/vol/micro-databases/blast"
 # sorteing
 min_unique_size : 2
 
