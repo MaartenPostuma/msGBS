@@ -68,7 +68,7 @@ rule temp_blastref:
     output:
         eukaryota_ref=expand("{output_dir}/Blasting/ref/{{sample}}/Eukaryota_ref.fa", output_dir=config["output_dir"])
     params:
-        output_dir=config["tmp_dir"],
+        output_dir=config["output_dir"],
         sup_dir=config["sup_dir"],
         sample=expand("{{sample}}")
     conda: "../Envs/blastparse.yaml"
